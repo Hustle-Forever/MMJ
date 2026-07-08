@@ -1,24 +1,47 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useLenis } from "@/hooks/use-lenis";
+import { Nav } from "@/components/Nav";
+import { Hero } from "@/components/sections/Hero";
+import { Showcase } from "@/components/sections/Showcase";
+import { Editorial } from "@/components/sections/Editorial";
+import { Film } from "@/components/sections/Film";
+import { Testimonials } from "@/components/sections/Testimonials";
+import { Footer } from "@/components/sections/Footer";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Home,
+  head: () => ({
+    meta: [
+      { title: "Curated by MMJ — Notebooks made to make it happen" },
+      {
+        name: "description",
+        content:
+          "Hand-bound hardcover notebooks in blush pink, ocean blue and sage green. Editorial paper goods, quietly expensive. Curated by MMJ.",
+      },
+      { property: "og:title", content: "Curated by MMJ — Make it happen" },
+      {
+        property: "og:description",
+        content:
+          "A trio of hand-bound hardcover notebooks. Cream paper, satin ribbon, made to be returned to.",
+      },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "/" },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Home() {
+  useLenis();
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="relative min-h-screen bg-blush text-blue">
+      <Nav />
+      <Hero />
+      <Showcase />
+      <Editorial />
+      <Film />
+      <Testimonials />
+      <Footer />
+    </main>
   );
 }
