@@ -1,7 +1,3 @@
-import pink from "@/assets/notebook-pink.asset.json";
-import blue from "@/assets/notebook-blue.asset.json";
-import green from "@/assets/notebook-green.asset.json";
-
 export type Product = {
   slug: "blush-pink" | "ocean-blue" | "sage-green";
   name: string;
@@ -21,7 +17,7 @@ export const products: Product[] = [
     colorLabel: "Blush Pink",
     hex: "#F4D8DF",
     scriptColor: "#0B5FA5",
-    image: pink.url,
+    image: "/textures/cover_pink.jpg",
     description:
       "A soft, romantic hardcover in blush pink with a royal-blue script. Made for morning pages, evening reflections, and everything worth writing down.",
     mood: "Desk, laptop, gold pen — quiet ambition.",
@@ -38,7 +34,7 @@ export const products: Product[] = [
     colorLabel: "Ocean Blue",
     hex: "#0B5FA5",
     scriptColor: "#FFFFFF",
-    image: blue.url,
+    image: "/textures/cover_blue.jpg",
     description:
       "Deep ocean blue with a hand-written white script. Editorial, confident, quietly powerful — a notebook that means business.",
     mood: "Soft white linen, morning light.",
@@ -55,7 +51,7 @@ export const products: Product[] = [
     colorLabel: "Sage Green",
     hex: "#8FA972",
     scriptColor: "#E7DE4A",
-    image: green.url,
+    image: "/textures/cover_green.jpg",
     description:
       "Sage green with a sun-yellow script. Warm, grounded, and lit like a slow afternoon on marble.",
     mood: "Warm marble, sheer curtain light.",

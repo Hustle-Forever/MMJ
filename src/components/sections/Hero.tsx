@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { FabricBackground } from "@/components/FabricBackground";
-import pink from "@/assets/notebook-pink.asset.json";
 
 /**
  * Hero: pink notebook floating on a circular pedestal.
@@ -86,7 +85,7 @@ export function Hero() {
               }}
             >
               <img
-                src={pink.url}
+                src="/textures/cover_pink.jpg"
                 alt="Curated by MMJ — Blush Pink hardcover notebook"
                 className="h-[62vh] w-auto rounded-[6px] object-contain"
                 style={{

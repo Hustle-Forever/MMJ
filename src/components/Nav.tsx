@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Menu, X, ShoppingBag } from "lucide-react";
-import logo from "@/assets/mmj-logo.asset.json";
 
 const LINKS = [
   { to: "/", label: "Home" },
@@ -58,7 +57,7 @@ export function Nav() {
 
           <Link to="/" className="flex items-center justify-center" aria-label="Curated by MMJ home">
             <img
-              src={logo.url}
+              src="/brand/mmj-logo.png"
               alt="Curated by MMJ"
               className="h-11 w-11 rounded-full object-cover ring-1 ring-[color-mix(in_oklab,var(--ink)_15%,transparent)]"
             />

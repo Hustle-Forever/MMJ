@@ -16,12 +16,20 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        /* Brand variants — token-only, soft hover lift on --ease-soft.
+           Pair with size="pill" for the 44px tap target. */
+        primary:
+          "bg-blue text-white shadow-soft transition-[transform,box-shadow,background-color] ease-soft duration-(--duration-micro) hover:-translate-y-1 hover:shadow-lift active:translate-y-0 active:shadow-soft",
+        quiet:
+          "border border-border bg-transparent text-ink transition-[transform,box-shadow,background-color,border-color] ease-soft duration-(--duration-micro) hover:-translate-y-1 hover:bg-white hover:shadow-card active:translate-y-0 active:shadow-none",
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
         icon: "h-9 w-9",
+        /* Brand size — min 44px tap target, editorial caps */
+        pill: "min-h-11 rounded-full px-8 py-2 text-[length:var(--type-caption)] uppercase tracking-caps",
       },
     },
     defaultVariants: {

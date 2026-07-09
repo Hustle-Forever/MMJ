@@ -1,0 +1,225 @@
+/* ==========================================================================
+   CURATED BY MMJ — Design Token System
+   --------------------------------------------------------------------------
+   Generated with ui-ux-pro-max (style: Exaggerated Minimalism, pattern:
+   Minimal Single Column) and reconciled to docs/MMJ-Design-Brief.md.
+   The brief is LOCKED and wins every conflict:
+     • palette: skill's black+gold replaced by locked blush/blue/white set
+     • ink: body text is brand blue #0B5FA5, never black
+     • tracking: −0.02em (brief) instead of skill's −0.05em
+     • spacing: locked 8px scale instead of skill's 24–96 spacious scale
+     • easing: locked soft-out signature instead of generic power2 defaults
+   Kept from the skill: oversized fluid display type, massive whitespace,
+   white-card-on-soft-background surface model, soft slow motion ("avoid
+   cheap visuals + fast animations"), reduced-motion + AA contrast rules.
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------
+     1. PALETTE — LOCKED. Do not add hues.
+     Contrast: blue on blush 5.5:1 (AA body) · blue on white 7.0:1 (AAA)
+     blue on footer-pink 4.4:1 — large text (≥18px) only on footer-pink.
+     ------------------------------------------------------------------ */
+  --blush: #f8e6ec;
+  --blush-2: #f4d8df;
+  --blue: #0b5fa5;
+  --white: #ffffff;
+  --footer-pink: #efc9d4;
+  --ink: var(--blue); /* all text ink — never black */
+
+  /* Derived tints — mixes of locked hues only, no new pigments */
+  --ink-70: color-mix(in oklab, var(--ink) 70%, transparent);
+  --ink-40: color-mix(in oklab, var(--ink) 40%, transparent);
+  --ink-12: color-mix(in oklab, var(--ink) 12%, transparent);
+  --blush-veil: color-mix(in oklab, var(--white) 55%, var(--blush));
+  --blush-glass: color-mix(in oklab, var(--blush) 72%, transparent); /* nav scrim */
+
+  /* Semantic surface mapping (shadcn) */
+  --background: var(--blush);
+  --foreground: var(--ink);
+  --card: var(--white);
+  --card-foreground: var(--ink);
+  --popover: var(--white);
+  --popover-foreground: var(--ink);
+  --primary: var(--blue);
+  --primary-foreground: var(--white);
+  --secondary: var(--blush-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--blush-2);
+  --muted-foreground: var(--ink-70);
+  --accent: var(--blush-2);
+  --accent-foreground: var(--ink);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: var(--white);
+  --border: var(--ink-12);
+  --input: color-mix(in oklab, var(--ink) 15%, transparent);
+  --ring: var(--blue);
+
+  /* ------------------------------------------------------------------
+     2. TYPOGRAPHY SCALE — oversized editorial, fluid clamp
+     Families live in @theme below (font-serif / font-sans / font-script).
+     ------------------------------------------------------------------ */
+  --tracking-display: -0.02em; /* LOCKED — not the skill's −0.05em */
+  --leading-display: 0.95;
+  --leading-body: 1.7; /* generous, editorial */
+
+  --type-display: clamp(3.5rem, 10vw, 9rem); /* hero / footer statement */
+  --type-h1: clamp(2.5rem, 6vw, 5rem);
+  --type-h2: clamp(2rem, 4.5vw, 3.5rem);
+  --type-h3: clamp(1.5rem, 3vw, 2.25rem);
+  --type-script: clamp(1.5rem, 3vw, 2.5rem); /* accent words only */
+  --type-lead: clamp(1.125rem, 1.5vw, 1.375rem);
+  --type-body: 1rem; /* 16px floor — never smaller for body */
+  --type-caption: 0.8125rem; /* 13px, labels/meta only */
+
+  /* ------------------------------------------------------------------
+     3. SPACING — LOCKED 8px scale (4px half-step for fine detail only)
+     Whitespace is the luxury: section rhythm is oversized but stays on
+     8px multiples at both clamp ends.
+     ------------------------------------------------------------------ */
+  --space-0-5: 4px;
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-5: 40px;
+  --space-6: 48px;
+  --space-8: 64px;
+  --space-10: 80px;
+  --space-12: 96px;
+  --space-16: 128px;
+  --space-20: 160px;
+  --space-24: 192px;
+  --space-section: clamp(96px, 12vw, 192px); /* between sections */
+  --space-section-sm: clamp(64px, 8vw, 96px); /* inside sections */
+
+  /* Base radius (steps derive in @theme) */
+  --radius: 0.5rem;
+
+  /* ------------------------------------------------------------------
+     4. MOTION TIMING — LOCKED soft direction. Luxury = slow, never
+     snappy. Enter with ease-soft; exits ~65% of enter, ease-soft-in.
+     Easing curves live in @theme below.
+     ------------------------------------------------------------------ */
+  --duration-micro: 200ms; /* hover, press */
+  --duration-base: 300ms; /* state changes */
+  --duration-slow: 500ms; /* panels, drawers */
+  --duration-reveal: 1100ms; /* line reveals, hero entrances */
+  --duration-exit: 200ms; /* ~65% of base-tier enters */
+  --stagger: 40ms; /* per item in list/grid reveals */
+
+  /* Ambient loops — felt, not seen */
+  --loop-fabric: 18s;
+  --loop-sheen: 22s;
+  --loop-marquee: 40s;
+
+  /* ------------------------------------------------------------------
+     5. LAYERING — fixed z scale, no ad-hoc z-indexes
+     ------------------------------------------------------------------ */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-nav: 20;
+  --z-drawer: 40;
+  --z-modal: 100;
+  --z-toast: 1000;
+}
+
+/* ==========================================================================
+   TAILWIND v4 THEME MAPPING
+   Literal-value tokens (also emitted as :root vars for GSAP/motion use):
+   fonts, shadows, easing. Utilities: font-serif, shadow-lift, ease-soft …
+   `static` = always emit these vars even before a utility uses them, so
+   runtime animation code can read them via getComputedStyle.
+   ========================================================================== */
+
+@theme static {
+  /* Type families — LOCKED direction */
+  --font-serif: "Fraunces", "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-script: "Dancing Script", "Brush Script MT", cursive;
+
+  /* Elevation — soft, ink-tinted (never gray/black), consistent scale */
+  --shadow-card: 0 2px 8px rgb(11 95 165 / 0.06);
+  --shadow-soft: 0 8px 24px rgb(11 95 165 / 0.08);
+  --shadow-lift: 0 16px 48px rgb(11 95 165 / 0.12); /* hover lift */
+  --shadow-contact: 0 24px 32px -20px rgb(11 95 165 / 0.28); /* 3D book */
+
+  /* Easing — signature soft-out is LOCKED */
+  --ease-soft: cubic-bezier(0.16, 1, 0.3, 1); /* entrances */
+  --ease-soft-in: cubic-bezier(0.7, 0, 0.84, 0); /* exits */
+  --ease-soft-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* page transitions */
+
+  /* Brand caps tracking (nav links, buttons, labels) → tracking-caps */
+  --tracking-caps: 0.22em;
+
+  /* Widest editorial container → max-w-wide */
+  --container-wide: 1600px;
+}
+
+/* Var-referencing tokens — inlined into utilities (shadcn v4 pattern).
+   Utilities: bg-blush, text-ink, bg-footer-pink, text-display, text-h1,
+   p-section, gap-section-sm, rounded-lg … */
+
+@theme inline {
+  /* Brand colors */
+  --color-blush: var(--blush);
+  --color-blush-2: var(--blush-2);
+  --color-blue: var(--blue);
+  --color-ink: var(--ink);
+  --color-footer-pink: var(--footer-pink);
+  --color-blush-veil: var(--blush-veil);
+  --color-blush-glass: var(--blush-glass);
+
+  /* Semantic colors (shadcn) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  /* Type scale → text-display, text-h1 … */
+  --text-display: var(--type-display);
+  --text-display--line-height: var(--leading-display);
+  --text-display--letter-spacing: var(--tracking-display);
+  --text-h1: var(--type-h1);
+  --text-h1--line-height: 1.05;
+  --text-h1--letter-spacing: var(--tracking-display);
+  --text-h2: var(--type-h2);
+  --text-h2--line-height: 1.1;
+  --text-h2--letter-spacing: var(--tracking-display);
+  --text-h3: var(--type-h3);
+  --text-h3--line-height: 1.2;
+  --text-lead: var(--type-lead);
+  --text-lead--line-height: 1.6;
+  --text-caption: var(--type-caption);
+  --text-caption--line-height: 1.4;
+
+  /* Section rhythm → p-section, py-section-sm, gap-section …
+     Tailwind's numeric spacing stays 4px-based — use EVEN steps
+     (p-2 = 8px, p-4 = 16px …) to hold the locked 8px grid. */
+  --spacing-section: var(--space-section);
+  --spacing-section-sm: var(--space-section-sm);
+
+  /* Radii */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+}
