@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PrimitivesRouteImport } from './routes/primitives'
+import { Route as HeroPreviewRouteImport } from './routes/hero-preview'
 import { Route as DesignTokensRouteImport } from './routes/design-tokens'
 import { Route as IndexRouteImport } from './routes/index'
 
 const PrimitivesRoute = PrimitivesRouteImport.update({
   id: '/primitives',
   path: '/primitives',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HeroPreviewRoute = HeroPreviewRouteImport.update({
+  id: '/hero-preview',
+  path: '/hero-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DesignTokensRoute = DesignTokensRouteImport.update({
@@ -32,30 +38,34 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/design-tokens': typeof DesignTokensRoute
+  '/hero-preview': typeof HeroPreviewRoute
   '/primitives': typeof PrimitivesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/design-tokens': typeof DesignTokensRoute
+  '/hero-preview': typeof HeroPreviewRoute
   '/primitives': typeof PrimitivesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/design-tokens': typeof DesignTokensRoute
+  '/hero-preview': typeof HeroPreviewRoute
   '/primitives': typeof PrimitivesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/design-tokens' | '/primitives'
+  fullPaths: '/' | '/design-tokens' | '/hero-preview' | '/primitives'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/design-tokens' | '/primitives'
-  id: '__root__' | '/' | '/design-tokens' | '/primitives'
+  to: '/' | '/design-tokens' | '/hero-preview' | '/primitives'
+  id: '__root__' | '/' | '/design-tokens' | '/hero-preview' | '/primitives'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DesignTokensRoute: typeof DesignTokensRoute
+  HeroPreviewRoute: typeof HeroPreviewRoute
   PrimitivesRoute: typeof PrimitivesRoute
 }
 
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/primitives'
       fullPath: '/primitives'
       preLoaderRoute: typeof PrimitivesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hero-preview': {
+      id: '/hero-preview'
+      path: '/hero-preview'
+      fullPath: '/hero-preview'
+      preLoaderRoute: typeof HeroPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/design-tokens': {
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DesignTokensRoute: DesignTokensRoute,
+  HeroPreviewRoute: HeroPreviewRoute,
   PrimitivesRoute: PrimitivesRoute,
 }
 export const routeTree = rootRouteImport

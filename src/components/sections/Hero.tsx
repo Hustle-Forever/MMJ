@@ -1,150 +1,137 @@
-import { useEffect, useRef, useState } from "react";
-import { FabricBackground } from "@/components/FabricBackground";
+import { useMemo } from "react";
+import { MotionConfig, motion, type Variants } from "motion/react";
+
+import { Button } from "@/components/ui/button";
+import { Container } from "@/components/layout/Container";
+import { Section } from "@/components/layout/Section";
+import { tokenEase, tokenSeconds } from "@/lib/motion-tokens";
+import { HeroBackground } from "./HeroBackground";
+import { HeroNotebook } from "./HeroNotebook";
 
 /**
- * Hero: pink notebook floating on a circular pedestal.
- * - Notebook: gentle vertical bob + slight tilt (CSS keyframes)
- * - Mouse tilt: parallax 2-4°, shadow shifts subtly
- * - Ribbon: soft SVG path with a slow sway
- * - Entrance: staggered mask-up on the headline lines
+ * Home hero — Curated by MMJ.
+ * Centered composition: oversized editorial headline, then the notebook
+ * standing on a circular pedestal, over the rippling satin fabric backdrop.
+ *
+ * Entrance (~2s staggered luxury timeline, all on --ease-soft / motion tokens):
+ *   background fades in → eyebrow fades → headline reveals line-by-line
+ *   (mask up) → notebook scales 90%→100%. Everything else stays calm.
+ *
+ * Flat cover_pink.jpg is a placeholder for the real 3D book (next step).
+ * All colors, sizes and easings come from tokens — nothing hardcoded off-palette.
  */
 export function Hero() {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-    const onMove = (e: MouseEvent) => {
-      const r = el.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      // clamp to ±3.5° max — physical, not gimmicky
-      const x = ((e.clientY - cy) / r.height) * -3.5;
-      const y = ((e.clientX - cx) / r.width) * 3.5;
-      setTilt({ x, y });
-    };
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
+  // Read timing from tokens.css; fallbacks mirror it for SSR (no animation there).
+  const t = useMemo(() => {
+    const ease = tokenEase("--ease-soft", [0.16, 1, 0.3, 1]);
+    const reveal = tokenSeconds("--duration-reveal", 1.1);
+    return { ease, reveal };
   }, []);
 
+  const bg: Variants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { duration: 0.8, ease: t.ease } },
+  };
+
+  const fadeUp = (delay: number): Variants => ({
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: t.reveal * 0.6, ease: t.ease, delay } },
+  });
+
+  const line = (delay: number): Variants => ({
+    hidden: { y: "110%" },
+    visible: { y: 0, transition: { duration: t.reveal, ease: t.ease, delay } },
+  });
+
+  const book: Variants = {
+    hidden: { opacity: 0, scale: 0.9 },
+    visible: { opacity: 1, scale: 1, transition: { duration: t.reveal, ease: t.ease, delay: 0.9 } },
+  };
+
   return (
-    <section
-      ref={wrapRef}
-      className="relative isolate flex min-h-[100dvh] w-full items-center justify-center overflow-hidden pt-24"
-    >
-      <FabricBackground />
+    <MotionConfig reducedMotion="user">
+      <Section
+        as="section"
+        rhythm="none"
+        className="relative isolate flex min-h-[100svh] flex-col items-center justify-center overflow-hidden pt-28 pb-16 text-center md:pt-32"
+      >
+        <motion.div variants={bg} initial="hidden" animate="visible">
+          <HeroBackground />
+        </motion.div>
 
-      {/* Headline */}
-      <div className="pointer-events-none absolute inset-x-0 top-[16%] z-10 mx-auto max-w-[1400px] px-6 text-center md:px-10">
-        <p
-          className="mb-4 text-[11px] uppercase tracking-[0.4em] text-blue/70"
-          style={{ animation: "mask-up 900ms cubic-bezier(0.16,1,0.3,1) 200ms both" }}
-        >
-          Curated by MMJ · Notebooks
-        </p>
-        <h1 className="font-display text-balance text-[13vw] leading-[0.92] text-blue md:text-[7.5vw]">
-          <span className="reveal-line">
-            <span className="reveal-line-inner" style={{ animationDelay: "300ms" }}>
-              Make it
-            </span>
-          </span>{" "}
-          <span className="reveal-line">
-            <span
-              className="reveal-line-inner font-script italic"
-              style={{ animationDelay: "550ms" }}
-            >
-              happen.
-            </span>
-          </span>
-        </h1>
-      </div>
-
-      {/* Pedestal + notebook */}
-      <div className="relative z-[5] mt-[6vh] flex flex-col items-center">
-        <div
-          className="relative"
-          style={{
-            perspective: "1400px",
-            transformStyle: "preserve-3d",
-          }}
-        >
-          <div
-            className="relative transition-transform duration-[600ms] ease-out"
-            style={{
-              transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-              transformStyle: "preserve-3d",
-            }}
+        <Container width="wide" className="flex flex-col items-center">
+          {/* Eyebrow */}
+          <motion.p
+            variants={fadeUp(0.35)}
+            initial="hidden"
+            animate="visible"
+            className="text-caption uppercase tracking-caps text-muted-foreground"
           >
-            {/* Notebook */}
-            <div
-              className="relative"
-              style={{
-                animation: "notebook-float 6.5s ease-in-out infinite",
-                filter: "drop-shadow(0 40px 60px rgba(11,95,165,0.28))",
-              }}
-            >
-              <img
-                src="/textures/cover_pink.jpg"
-                alt="Curated by MMJ — Blush Pink hardcover notebook"
-                className="h-[62vh] w-auto rounded-[6px] object-contain"
-                style={{
-                  animation: "mask-up 1400ms cubic-bezier(0.16,1,0.3,1) 700ms both",
-                }}
-                draggable={false}
-              />
+            Curated by MMJ · Hardcover notebooks
+          </motion.p>
 
-              {/* Ribbon accent — CSS silk */}
-              <div
-                className="pointer-events-none absolute -bottom-16 left-1/2 h-40 w-3 -translate-x-1/2 origin-top"
-                style={{
-                  background:
-                    "linear-gradient(180deg, #f4d8df 0%, #efc9d4 55%, #e8b8c6 100%)",
-                  borderRadius: "2px",
-                  boxShadow: "inset -1px 0 0 rgba(255,255,255,0.6), 0 8px 14px rgba(11,95,165,0.15)",
-                  animation: "ribbon-sway 5.5s ease-in-out infinite",
-                }}
-              />
-            </div>
-          </div>
+          {/* Headline — the bold moment, revealed line by line */}
+          <h1
+            className="font-display mt-6 text-balance leading-[var(--leading-display)] text-ink"
+            style={{ fontSize: "clamp(3rem, 8.5vw, 6.5rem)" }}
+          >
+            <span className="block overflow-hidden pb-[0.06em]">
+              <motion.span
+                className="block"
+                variants={line(0.5)}
+                initial="hidden"
+                animate="visible"
+              >
+                Make it
+              </motion.span>
+            </span>
+            <span className="block overflow-hidden pb-[0.06em]">
+              <motion.span
+                className="font-script block italic"
+                style={{ fontSize: "1.08em" }}
+                variants={line(0.68)}
+                initial="hidden"
+                animate="visible"
+              >
+                happen.
+              </motion.span>
+            </span>
+          </h1>
 
-          {/* Pedestal */}
-          <div className="relative -mt-6 flex justify-center">
-            <div
-              className="relative h-6 w-[52vh] max-w-[520px]"
-              aria-hidden
-            >
-              <div
-                className="absolute inset-0 rounded-[50%]"
-                style={{
-                  background:
-                    "radial-gradient(ellipse at center, rgba(11,95,165,0.35) 0%, rgba(11,95,165,0.18) 40%, transparent 70%)",
-                  animation: "shadow-float 6.5s ease-in-out infinite",
-                  filter: "blur(6px)",
-                }}
-              />
-            </div>
-          </div>
-          <div className="relative mx-auto -mt-2 flex justify-center">
-            <div
-              className="h-10 w-[54vh] max-w-[540px] rounded-[50%]"
-              style={{
-                background:
-                  "radial-gradient(ellipse at 50% 30%, #ffffff 0%, #f7dbe3 45%, #e8b8c6 100%)",
-                boxShadow:
-                  "0 30px 60px -20px rgba(11,95,165,0.35), inset 0 -6px 20px rgba(11,95,165,0.15)",
-              }}
-            />
-          </div>
-        </div>
-      </div>
+          {/* Notebook standing on the circular pedestal (3D on desktop, flat on mobile) */}
+          <motion.div
+            variants={book}
+            initial="hidden"
+            animate="visible"
+            className="relative mt-10 flex flex-col items-center"
+          >
+            <HeroNotebook color="pink" />
+          </motion.div>
 
-      {/* Scroll cue */}
-      <div className="absolute bottom-10 left-1/2 z-10 -translate-x-1/2 text-[11px] uppercase tracking-[0.35em] text-blue/60">
-        <span className="inline-block animate-bounce [animation-duration:2.4s]">
-          Scroll ↓
-        </span>
-      </div>
-    </section>
+          {/* Single calm CTA */}
+          <motion.div variants={fadeUp(1.2)} initial="hidden" animate="visible" className="mt-12">
+            <Button variant="primary" size="pill">
+              Shop the collection
+            </Button>
+          </motion.div>
+        </Container>
+
+        {/* Scroll cue */}
+        <motion.div
+          variants={fadeUp(1.6)}
+          initial="hidden"
+          animate="visible"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        >
+          <motion.span
+            className="text-caption uppercase tracking-caps text-muted-foreground"
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            Scroll
+          </motion.span>
+        </motion.div>
+      </Section>
+    </MotionConfig>
   );
 }
