@@ -22,11 +22,13 @@ const COVERS: Record<NotebookColor, string> = {
   green: "/textures/cover_green.jpg",
 };
 
-// Locked-token linen tints. Pink = blush. Blue/green fall back to blush for now.
+// Locked-token linen tints. Deeper footer-pink frames the pale cover and
+// separates the book from the pale blush background. Blue/green: TBD in the
+// morph step.
 const LINEN: Record<NotebookColor, string> = {
-  pink: "#f8e6ec",
-  blue: "#f8e6ec",
-  green: "#f8e6ec",
+  pink: "#efc9d4",
+  blue: "#efc9d4",
+  green: "#efc9d4",
 };
 
 // Book proportions (standing upright, portrait).
@@ -91,10 +93,10 @@ export function Notebook({
         <meshStandardMaterial color="#ffffff" roughness={0.95} metalness={0} />
       </mesh>
 
-      {/* Printed front cover — the product color moment */}
+      {/* Printed front cover — the product color moment. */}
       <mesh position={[0, 0, D / 2 + 0.002]}>
         <planeGeometry args={[W * 0.97, H * 0.97]} />
-        <meshStandardMaterial map={cover} roughness={0.55} metalness={0} />
+        <meshStandardMaterial map={cover} roughness={0.5} metalness={0} />
       </mesh>
 
       {/* Spine crease — a subtle recessed line near the binding edge */}

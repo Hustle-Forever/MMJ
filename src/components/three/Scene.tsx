@@ -2,42 +2,45 @@
 
 import { Suspense, useRef, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 
 import { Notebook, type NotebookColor } from "./Notebook";
 
 /**
  * <Scene /> — reusable studio stage for the 3D notebook.
- * Transparent canvas overlaying the DOM fabric + pedestal. Soft 3-point
- * lighting, a grounding contact shadow, gentle float, and a 2–4° mouse tilt.
- * Client-only and lazy-loaded — three never touches the initial bundle or SSR.
+ * Transparent canvas over the DOM stripes. Bright, soft studio lighting so the
+ * book is the richest thing on screen and pops off the pale background. The
+ * book rests at a gentle near-front three-quarter angle, floats subtly, and
+ * tilts a few degrees toward the cursor. No pedestal, no grounding shadow — it
+ * floats cleanly.
  *
- * `lowPower` (capable phones): drops the rim light, bakes a low-res static
- * contact shadow, softens the float, downscales the cover texture, and hints a
- * low-power GL context — to hold 60fps on mobile. Desktop (lowPower=false) is
- * unchanged. Reduced-motion / low-tier devices never mount this at all.
+ * `lowPower` (capable phones): softer float, low-power GL hint, downscaled
+ * texture (via Notebook). Desktop path is unchanged. Client-only + lazy-loaded.
  */
+
+// Resting orientation — three-quarter, cover clearly facing the viewer.
+const BASE_ROT_Y = -0.24; // ~14°
+const BASE_ROT_X = -0.04;
 
 function Rig({ children, subtle = false }: { children: ReactNode; subtle?: boolean }) {
   const group = useRef<THREE.Group>(null);
   const { pointer } = useThree();
-  const bob = subtle ? 0.045 : 0.06;
-  const driftAmp = subtle ? 0.03 : 0.04;
+  const bob = subtle ? 0.05 : 0.07;
+  const driftAmp = subtle ? 0.02 : 0.03;
 
   useFrame((state, delta) => {
     const g = group.current;
     if (!g) return;
     const t = state.clock.elapsedTime;
 
-    // Gentle float: vertical bob + tiny rotation drift.
+    // Subtle float: vertical bob + tiny rotation drift around the resting angle.
     g.position.y = Math.sin(t * 0.8) * bob;
     const drift = Math.sin(t * 0.4) * driftAmp;
 
-    // Mouse tilt, clamped to ~3–4° and eased toward the pointer.
-    // On touch there is no pointer, so this settles to the drift alone.
-    const targetY = pointer.x * 0.07 + drift;
-    const targetX = -pointer.y * 0.05;
+    // Mouse tilt eased around the resting three-quarter angle (~3–4°).
+    // On touch there is no pointer, so it settles to base + drift.
+    const targetY = BASE_ROT_Y + pointer.x * 0.06 + drift;
+    const targetX = BASE_ROT_X - pointer.y * 0.05;
     g.rotation.y = THREE.MathUtils.damp(g.rotation.y, targetY, 4, delta);
     g.rotation.x = THREE.MathUtils.damp(g.rotation.x, targetX, 4, delta);
   });
@@ -54,7 +57,11 @@ export default function Scene({
 }) {
   return (
     <Canvas
-      camera={{ position: [0, 0, 6.2], fov: 30 }}
+      // flat = no ACES tone mapping, so the pastel cover keeps its true color
+      // instead of going muddy/dark. Light sums are kept near 1 so the pale
+      // cover reads crisp rather than blowing out to white.
+      flat
+      camera={{ position: [0, 0, 6], fov: 30 }}
       dpr={[1, 2]}
       gl={{
         alpha: true,
@@ -63,27 +70,18 @@ export default function Scene({
       }}
       style={{ width: "100%", height: "100%" }}
     >
-      {/* Soft studio lighting: key + soft fill + gentle rim (rim dropped on mobile). */}
-      <ambientLight intensity={lowPower ? 0.7 : 0.55} />
-      <directionalLight position={[4, 6, 5]} intensity={2.1} />
-      <directionalLight position={[-5, 2, 3]} intensity={0.5} />
-      {!lowPower && <directionalLight position={[0, 4, -6]} intensity={1.1} color="#ffffff" />}
+      {/* Soft studio: key + fill so no face is muddy, gentle bottom + rim
+          fill (rim dropped on mobile). Tuned to stay just under clipping. */}
+      <ambientLight intensity={0.55} />
+      <directionalLight position={[3, 5, 6]} intensity={0.85} />
+      <directionalLight position={[-4, 1, 3]} intensity={0.5} />
+      <directionalLight position={[0, -3, 4]} intensity={0.22} />
+      {!lowPower && <directionalLight position={[0, 4, -5]} intensity={0.35} color="#ffffff" />}
 
       <Suspense fallback={null}>
         <Rig subtle={lowPower}>
           <Notebook color={color} lowRes={lowPower} />
         </Rig>
-        {/* Soft contact shadow grounds the book. On mobile it's a cheap static bake. */}
-        <ContactShadows
-          position={[0, -1.72, 0]}
-          opacity={0.32}
-          scale={6}
-          blur={2.6}
-          far={3}
-          resolution={lowPower ? 256 : 512}
-          frames={lowPower ? 1 : Infinity}
-          color="#0b5fa5"
-        />
       </Suspense>
     </Canvas>
   );

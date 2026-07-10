@@ -20,7 +20,6 @@ export const Route = createFileRoute("/hero-preview")({
 const NAV_LINKS = [
   { to: "/shop", label: "Shop" },
   { to: "/journal", label: "Journal" },
-  { to: "/about", label: "About" },
 ];
 
 function HeroPreview() {

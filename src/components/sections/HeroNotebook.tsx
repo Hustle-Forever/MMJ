@@ -17,46 +17,20 @@ function FlatCover() {
       draggable={false}
       className="h-full w-auto rounded-md object-contain [animation:notebook-float_7s_ease-in-out_infinite]"
       style={{
-        filter: "drop-shadow(0 36px 52px color-mix(in oklab, var(--blue) 28%, transparent))",
+        // Faint, soft, tight shadow so it floats cleanly (no pedestal).
+        filter: "drop-shadow(0 22px 26px color-mix(in oklab, var(--blue) 12%, transparent))",
       }}
     />
   );
 }
 
-/** The circular pedestal the book stands on — locked tokens only, stays still. */
-function Pedestal() {
-  return (
-    <div className="relative -mt-3 flex flex-col items-center" aria-hidden>
-      <div
-        className="h-4 rounded-[50%] [animation:shadow-float_7s_ease-in-out_infinite]"
-        style={{
-          width: "clamp(220px, 40vh, 460px)",
-          background:
-            "radial-gradient(ellipse at center, color-mix(in oklab, var(--blue) 32%, transparent) 0%, color-mix(in oklab, var(--blue) 16%, transparent) 42%, transparent 70%)",
-          filter: "blur(6px)",
-        }}
-      />
-      <div
-        className="-mt-2 h-9 rounded-[50%]"
-        style={{
-          width: "clamp(240px, 44vh, 500px)",
-          background:
-            "radial-gradient(ellipse at 50% 30%, var(--white) 0%, var(--blush) 45%, var(--footer-pink) 100%)",
-          boxShadow:
-            "0 28px 56px -20px color-mix(in oklab, var(--blue) 35%, transparent), inset 0 -6px 20px color-mix(in oklab, var(--blue) 14%, transparent)",
-        }}
-      />
-    </div>
-  );
-}
-
 /**
- * The hero's notebook. Live 3D when the device can sustain it:
+ * The hero's notebook, floating cleanly (no pedestal). Live 3D when the device
+ * can sustain it:
  *   - desktop (≥768px, WebGL) → 3D, unchanged from before
  *   - capable phones (detect-gpu tier ≥ 2, WebGL) → 3D in low-power mode
  *   - low-tier GPUs, no WebGL, or reduced-motion → flat cover (no canvas)
  * `?force3d=1` / `?force3d=0` overrides the gate (testing + demo control).
- * Either way the book stands on the same still pedestal.
  */
 export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
   const [use3D, setUse3D] = useState(false);
@@ -107,9 +81,14 @@ export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
 
   return (
     <div className="relative flex flex-col items-center">
+      {/* Bigger stage so the book fills more of the hero. Width is capped at
+          90vw so it never overflows on mobile. */}
       <div
         className="relative"
-        style={{ height: "clamp(210px, 36vh, 400px)", width: "clamp(240px, 42vh, 470px)" }}
+        style={{
+          height: "clamp(320px, 54vh, 600px)",
+          width: "min(90vw, clamp(300px, 48vh, 560px))",
+        }}
       >
         {use3D ? (
           <Suspense
@@ -127,7 +106,6 @@ export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
           </div>
         )}
       </div>
-      <Pedestal />
     </div>
   );
 }
