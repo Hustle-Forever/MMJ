@@ -72,7 +72,7 @@ export function Hero() {
 
           {/* Headline — the bold moment, revealed line by line */}
           <h1
-            className="font-display mt-6 text-balance leading-[var(--leading-display)] text-ink"
+            className="font-display mt-6 text-balance leading-[var(--leading-display)]"
             style={{ fontSize: "clamp(3rem, 8.5vw, 6.5rem)" }}
           >
             <span className="block overflow-hidden pb-[0.06em]">
@@ -81,6 +81,15 @@ export function Hero() {
                 variants={line(0.5)}
                 initial="hidden"
                 animate="visible"
+                style={{
+                  background:
+                    "linear-gradient(90deg, var(--blue) 0%, var(--blue) 35%, color-mix(in oklab, var(--white) 75%, var(--blue)) 50%, var(--blue) 65%, var(--blue) 100%)",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  animation: "text-shine 6s ease-in-out 2s infinite",
+                }}
               >
                 Make it
               </motion.span>
@@ -88,7 +97,16 @@ export function Hero() {
             <span className="block overflow-hidden pb-[0.06em]">
               <motion.span
                 className="font-script block italic"
-                style={{ fontSize: "1.08em" }}
+                style={{
+                  fontSize: "1.08em",
+                  background:
+                    "linear-gradient(90deg, var(--blue) 0%, var(--blue) 35%, color-mix(in oklab, var(--white) 75%, var(--blue)) 50%, var(--blue) 65%, var(--blue) 100%)",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  animation: "text-shine 6s ease-in-out 2.4s infinite",
+                }}
                 variants={line(0.68)}
                 initial="hidden"
                 animate="visible"

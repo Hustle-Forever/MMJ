@@ -57,7 +57,7 @@ export function Nav() {
 
           <Link to="/" className="flex items-center justify-center" aria-label="Curated by MMJ home">
             <img
-              src="/brand/mmj-logo.png"
+              src="/logo/logo.png"
               alt="Curated by MMJ"
               className="h-11 w-11 rounded-full object-cover ring-1 ring-[color-mix(in_oklab,var(--ink)_15%,transparent)]"
             />

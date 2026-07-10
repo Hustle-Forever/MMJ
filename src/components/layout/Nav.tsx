@@ -68,7 +68,7 @@ export function Nav({ links, cartCount = 0, onCartClick, className }: NavProps) 
           ) : (
             <img
               ref={logoRef}
-              src="/brand/mmj-logo.png"
+              src="/logo/logo.png"
               alt="Curated by MMJ"
               className="h-11 w-11 rounded-full object-cover ring-1 ring-border"
               onError={() => setLogoFailed(true)}

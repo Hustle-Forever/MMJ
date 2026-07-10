@@ -205,6 +205,14 @@
   will-change: transform;
 }
 
+/* Headline shine sweep — blue ink, lighter-blue highlight, on-brand only.
+   Sweeps once every 6s: 45% of cycle = travel, rest = pause before next sweep. */
+@keyframes text-shine {
+  0%   { background-position: -200% center; }
+  45%  { background-position: 200% center; }
+  100% { background-position: 200% center; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -72,7 +72,7 @@ export default function Scene({
       // instead of going muddy/dark. Light sums are kept near 1 so the pale
       // cover reads crisp rather than blowing out to white.
       flat
-      camera={{ position: [0, 0, 6], fov: 30 }}
+      camera={{ position: [0, 0, 6], fov: 34 }}
       dpr={[1, 2]}
       gl={{
         alpha: true,

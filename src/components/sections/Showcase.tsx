@@ -174,7 +174,7 @@ export function Showcase() {
           <div className="relative md:col-span-8">
             <div
               className="relative mx-auto"
-              style={{ height: "min(78vh, 620px)", width: "min(90vw, 620px)" }}
+              style={{ height: "clamp(240px, 52svh, 560px)", width: "min(85vw, 560px)" }}
             >
               {/* Flat crossfade base (always present; hidden once 3D confirmed). */}
               <div
