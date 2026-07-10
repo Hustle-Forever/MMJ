@@ -1,3 +1,7 @@
+import coverPink from "@/assets/covers/cover_pink.jpg";
+import coverBlue from "@/assets/covers/cover_blue.jpg";
+import coverGreen from "@/assets/covers/cover_green.jpg";
+
 export type Product = {
   slug: "blush-pink" | "ocean-blue" | "sage-green";
   name: string;
@@ -17,7 +21,7 @@ export const products: Product[] = [
     colorLabel: "Blush Pink",
     hex: "#F4D8DF",
     scriptColor: "#0B5FA5",
-    image: "/textures/cover_pink.jpg",
+    image: coverPink,
     description:
       "A soft, romantic hardcover in blush pink with a royal-blue script. Made for morning pages, evening reflections, and everything worth writing down.",
     mood: "Desk, laptop, gold pen — quiet ambition.",
@@ -34,7 +38,7 @@ export const products: Product[] = [
     colorLabel: "Ocean Blue",
     hex: "#0B5FA5",
     scriptColor: "#FFFFFF",
-    image: "/textures/cover_blue.jpg",
+    image: coverBlue,
     description:
       "Deep ocean blue with a hand-written white script. Editorial, confident, quietly powerful — a notebook that means business.",
     mood: "Soft white linen, morning light.",
@@ -51,7 +55,7 @@ export const products: Product[] = [
     colorLabel: "Sage Green",
     hex: "#8FA972",
     scriptColor: "#E7DE4A",
-    image: "/textures/cover_green.jpg",
+    image: coverGreen,
     description:
       "Sage green with a sun-yellow script. Warm, grounded, and lit like a slow afternoon on marble.",
     mood: "Warm marble, sheer curtain light.",

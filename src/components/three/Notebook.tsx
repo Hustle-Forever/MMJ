@@ -2,6 +2,10 @@ import { useMemo } from "react";
 import { useTexture, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 
+import coverPink from "@/assets/covers/cover_pink.jpg";
+import coverBlue from "@/assets/covers/cover_blue.jpg";
+import coverGreen from "@/assets/covers/cover_green.jpg";
+
 /**
  * <Notebook /> — hardcover book model for the MMJ hero / product viewer.
  * Rounded linen cover, printed front texture, cream page block on the opening
@@ -17,9 +21,9 @@ import * as THREE from "three";
 export type NotebookColor = "pink" | "blue" | "green";
 
 const COVERS: Record<NotebookColor, string> = {
-  pink: "/textures/cover_pink.jpg",
-  blue: "/textures/cover_blue.jpg",
-  green: "/textures/cover_green.jpg",
+  pink: coverPink,
+  blue: coverBlue,
+  green: coverGreen,
 };
 
 // Locked-token linen tints. Deeper footer-pink frames the pale cover and

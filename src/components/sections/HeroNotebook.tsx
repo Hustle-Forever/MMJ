@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 
 import type { NotebookColor } from "@/components/three/Notebook";
 import { detect3DTier, hasWebGL } from "@/lib/detect-3d";
+import coverPink from "@/assets/covers/cover_pink.jpg";
 
 // Lazy so three / R3F never ship in the initial bundle and never run on the server.
 const Scene = lazy(() => import("@/components/three/Scene"));
@@ -12,7 +13,7 @@ const MOBILE_TIER_MIN = 2;
 function FlatCover() {
   return (
     <img
-      src="/textures/cover_pink.jpg"
+      src={coverPink}
       alt="Curated by MMJ — Blush Pink hardcover notebook"
       draggable={false}
       className="h-full w-auto rounded-md object-contain [animation:notebook-float_7s_ease-in-out_infinite]"
