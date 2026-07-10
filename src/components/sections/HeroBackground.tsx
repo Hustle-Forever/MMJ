@@ -44,12 +44,17 @@ export function HeroBackground() {
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-      {/* Straight vertical stripes — 48px each, on the 8px grid. */}
+      {/* Straight vertical stripes — 48px each, on the 8px grid. Masked so they
+          dissolve softly at the top and bottom instead of ending in a hard line. */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage:
             "repeating-linear-gradient(90deg, var(--blush) 0, var(--blush) 48px, var(--blush-2) 48px, var(--blush-2) 96px)",
+          maskImage:
+            "linear-gradient(to bottom, transparent 0%, #000 12%, #000 55%, transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, transparent 0%, #000 12%, #000 55%, transparent 100%)",
         }}
       />
       {/* Soft spotlight that gently brightens the stripes (tracks cursor on desktop). */}
