@@ -1,10 +1,19 @@
 "use client";
 
-import { Suspense, useRef, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { Notebook, type NotebookColor } from "./Notebook";
+
+/** Fires once — mounted only after the Notebook's texture has loaded, so it
+ * confirms the 3D book is actually rendering (used to hide the flat fallback). */
+function Ready({ onReady }: { onReady?: () => void }) {
+  useEffect(() => {
+    onReady?.();
+  }, [onReady]);
+  return null;
+}
 
 /**
  * <Scene /> — reusable studio stage for the 3D notebook.
@@ -51,9 +60,11 @@ function Rig({ children, subtle = false }: { children: ReactNode; subtle?: boole
 export default function Scene({
   color = "pink" as NotebookColor,
   lowPower = false,
+  onReady,
 }: {
   color?: NotebookColor;
   lowPower?: boolean;
+  onReady?: () => void;
 }) {
   return (
     <Canvas
@@ -82,6 +93,7 @@ export default function Scene({
         <Rig subtle={lowPower}>
           <Notebook color={color} lowRes={lowPower} />
         </Rig>
+        <Ready onReady={onReady} />
       </Suspense>
     </Canvas>
   );

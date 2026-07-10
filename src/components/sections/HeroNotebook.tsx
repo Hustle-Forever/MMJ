@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 
 import type { NotebookColor } from "@/components/three/Notebook";
 import { detect3DTier, hasWebGL } from "@/lib/detect-3d";
@@ -10,6 +10,25 @@ const Scene = lazy(() => import("@/components/three/Scene"));
 // Capable phones (detect-gpu tier ≥ 2) get the live book; lower tiers fall back.
 const MOBILE_TIER_MIN = 2;
 
+/** If the 3D canvas throws for any reason, render nothing so the flat base shows. */
+class CanvasErrorBoundary extends Component<
+  { onFail: () => void; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {
+    this.props.onFail();
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+/** Flat cover — bundled asset (served from /assets, unlike public/textures which
+ * 404s on Vercel). This is the guaranteed-visible book. */
 function FlatCover() {
   return (
     <img
@@ -18,7 +37,6 @@ function FlatCover() {
       draggable={false}
       className="h-full w-auto rounded-md object-contain [animation:notebook-float_7s_ease-in-out_infinite]"
       style={{
-        // Faint, soft, tight shadow so it floats cleanly (no pedestal).
         filter: "drop-shadow(0 22px 26px color-mix(in oklab, var(--blue) 12%, transparent))",
       }}
     />
@@ -26,16 +44,21 @@ function FlatCover() {
 }
 
 /**
- * The hero's notebook, floating cleanly (no pedestal). Live 3D when the device
- * can sustain it:
- *   - desktop (≥768px, WebGL) → 3D, unchanged from before
- *   - capable phones (detect-gpu tier ≥ 2, WebGL) → 3D in low-power mode
- *   - low-tier GPUs, no WebGL, or reduced-motion → flat cover (no canvas)
- * `?force3d=1` / `?force3d=0` overrides the gate (testing + demo control).
+ * The hero's notebook, floating cleanly (no pedestal).
+ *
+ * Reliability: the flat cover is ALWAYS rendered as the visible base. The live
+ * 3D canvas overlays it and the flat book is hidden ONLY once the 3D book is
+ * confirmed to be rendering (texture loaded → Scene fires onReady). Any failure
+ * — no WebGL, GPU gate, lazy-load error, WebGL context loss, texture error —
+ * leaves the flat book visible. A book is always on screen.
+ *
+ * Gate: desktop (WebGL) → 3D; capable phones (tier ≥ 2) → 3D low-power; else
+ * flat only. `?force3d=1` / `?force3d=0` overrides for the demo.
  */
 export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
   const [use3D, setUse3D] = useState(false);
   const [lowPower, setLowPower] = useState(false);
+  const [ready, setReady] = useState(false); // 3D confirmed rendering
 
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -55,7 +78,7 @@ export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
         }
         return;
       }
-      // Desktop: unchanged — mount immediately when WebGL is available.
+      // Desktop: mount immediately when WebGL is available.
       if (desktop.matches) {
         if (!cancelled) {
           setLowPower(false);
@@ -91,20 +114,23 @@ export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
           width: "min(90vw, clamp(300px, 48vh, 560px))",
         }}
       >
-        {use3D ? (
-          <Suspense
-            fallback={
-              <div className="flex h-full items-center justify-center">
-                <FlatCover />
+        {/* Always-present flat book — hidden only once the 3D book is confirmed. */}
+        <div
+          className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
+          style={{ opacity: ready ? 0 : 1 }}
+        >
+          <FlatCover />
+        </div>
+
+        {/* Live 3D overlay. Any failure leaves the flat book above. */}
+        {use3D && (
+          <CanvasErrorBoundary onFail={() => setReady(false)}>
+            <Suspense fallback={null}>
+              <div className="absolute inset-0">
+                <Scene color={color} lowPower={lowPower} onReady={() => setReady(true)} />
               </div>
-            }
-          >
-            <Scene color={color} lowPower={lowPower} />
-          </Suspense>
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <FlatCover />
-          </div>
+            </Suspense>
+          </CanvasErrorBoundary>
         )}
       </div>
     </div>
