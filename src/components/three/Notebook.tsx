@@ -12,75 +12,63 @@ import coverGreen from "@/assets/covers/cover_green.jpg";
  * side, and a satin ribbon bookmark. Soft PBR (low metalness, medium roughness,
  * subtle sheen) so it reads as premium linen, not plastic.
  *
- * Product colors come from the printed cover texture. The linen body/edges use
- * blush for pink; blue/green linen tint is deferred to the scroll-morph step
- * (green has no locked UI token, so it's decided alongside the morph palette).
- * Textures for all three are wired here so the next step can swap freely.
+ * The body (everything but the printed front cover) is exported as
+ * <NotebookBody /> so the scroll showcase reuses the exact same model + look
+ * with a crossfading cover.
  */
 
 export type NotebookColor = "pink" | "blue" | "green";
 
-const COVERS: Record<NotebookColor, string> = {
+export const COVERS: Record<NotebookColor, string> = {
   pink: coverPink,
   blue: coverBlue,
   green: coverGreen,
 };
 
-// Locked-token linen tints. Deeper footer-pink frames the pale cover and
-// separates the book from the pale blush background. Blue/green: TBD in the
-// morph step.
-const LINEN: Record<NotebookColor, string> = {
-  pink: "#efc9d4",
-  blue: "#efc9d4",
-  green: "#efc9d4",
-};
+// Locked-token linen tint — deeper footer-pink frames the pale cover.
+const LINEN = "#efc9d4";
 
 // Book proportions (standing upright, portrait).
-const W = 2.1;
-const H = 2.9;
-const D = 0.52;
+export const NB = { W: 2.1, H: 2.9, D: 0.52 };
 
 useTexture.preload(COVERS.pink);
 
-/** Prepare the cover texture; on low-power devices downscale it to 512px. */
+/** Prepare a cover texture; on low-power devices downscale it to 512px. */
+export function prepCover(cover: THREE.Texture, lowRes: boolean) {
+  cover.colorSpace = THREE.SRGBColorSpace;
+  cover.anisotropy = lowRes ? 1 : 8;
+  const img = cover.image as (HTMLImageElement & { __downscaled?: boolean }) | undefined;
+  if (lowRes && img && !(cover as unknown as { __downscaled?: boolean }).__downscaled) {
+    const max = 512;
+    const scale = Math.min(1, max / Math.max(img.width || max, img.height || max));
+    if (scale < 1) {
+      const cv = document.createElement("canvas");
+      cv.width = Math.round((img.width || max) * scale);
+      cv.height = Math.round((img.height || max) * scale);
+      cv.getContext("2d")?.drawImage(img, 0, 0, cv.width, cv.height);
+      cover.image = cv;
+      cover.needsUpdate = true;
+    }
+    (cover as unknown as { __downscaled?: boolean }).__downscaled = true;
+  }
+}
+
 function useCover(color: NotebookColor, lowRes: boolean) {
   const cover = useTexture(COVERS[color]);
-  useMemo(() => {
-    cover.colorSpace = THREE.SRGBColorSpace;
-    cover.anisotropy = lowRes ? 1 : 8;
-    const img = cover.image as (HTMLImageElement & { __downscaled?: boolean }) | undefined;
-    if (lowRes && img && !(cover as unknown as { __downscaled?: boolean }).__downscaled) {
-      const max = 512;
-      const scale = Math.min(1, max / Math.max(img.width || max, img.height || max));
-      if (scale < 1) {
-        const cv = document.createElement("canvas");
-        cv.width = Math.round((img.width || max) * scale);
-        cv.height = Math.round((img.height || max) * scale);
-        cv.getContext("2d")?.drawImage(img, 0, 0, cv.width, cv.height);
-        cover.image = cv;
-        cover.needsUpdate = true;
-      }
-      (cover as unknown as { __downscaled?: boolean }).__downscaled = true;
-    }
-  }, [cover, lowRes]);
+  useMemo(() => prepCover(cover, lowRes), [cover, lowRes]);
   return cover;
 }
 
-export function Notebook({
-  color = "pink",
-  lowRes = false,
-}: {
-  color?: NotebookColor;
-  lowRes?: boolean;
-}) {
-  const cover = useCover(color, lowRes);
+const { W, H, D } = NB;
 
+/** The book model minus the printed front cover — reused by hero + showcase. */
+export function NotebookBody() {
   return (
-    <group>
+    <>
       {/* Cover body — soft linen hardcover */}
       <RoundedBox args={[W, H, D]} radius={0.05} smoothness={5} castShadow receiveShadow>
         <meshPhysicalMaterial
-          color={LINEN[color]}
+          color={LINEN}
           roughness={0.62}
           metalness={0}
           sheen={0.6}
@@ -97,21 +85,10 @@ export function Notebook({
         <meshStandardMaterial color="#ffffff" roughness={0.95} metalness={0} />
       </mesh>
 
-      {/* Printed front cover — the product color moment. */}
-      <mesh position={[0, 0, D / 2 + 0.002]}>
-        <planeGeometry args={[W * 0.97, H * 0.97]} />
-        <meshStandardMaterial map={cover} roughness={0.5} metalness={0} />
-      </mesh>
-
       {/* Spine crease — a subtle recessed line near the binding edge */}
       <mesh position={[-W / 2 + 0.12, 0, D / 2 + 0.001]}>
         <planeGeometry args={[0.012, H * 0.9]} />
-        <meshStandardMaterial
-          color="#0b5fa5"
-          transparent
-          opacity={0.12}
-          roughness={1}
-        />
+        <meshStandardMaterial color="#0b5fa5" transparent opacity={0.12} roughness={1} />
       </mesh>
 
       {/* Satin ribbon bookmark — hangs from the top over the fore-edge */}
@@ -125,6 +102,27 @@ export function Notebook({
           sheenRoughness={0.25}
           sheenColor="#ffffff"
         />
+      </mesh>
+    </>
+  );
+}
+
+export function Notebook({
+  color = "pink",
+  lowRes = false,
+}: {
+  color?: NotebookColor;
+  lowRes?: boolean;
+}) {
+  const cover = useCover(color, lowRes);
+
+  return (
+    <group>
+      <NotebookBody />
+      {/* Printed front cover — the product color moment. */}
+      <mesh position={[0, 0, D / 2 + 0.002]}>
+        <planeGeometry args={[W * 0.97, H * 0.97]} />
+        <meshStandardMaterial map={cover} roughness={0.5} metalness={0} />
       </mesh>
     </group>
   );

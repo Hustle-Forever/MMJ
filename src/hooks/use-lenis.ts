@@ -1,30 +1,43 @@
 import { useEffect } from "react";
 import Lenis from "lenis";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// Site-wide smooth scroll. Runs once on mount, cleans up on unmount.
+gsap.registerPlugin(ScrollTrigger);
+
+/**
+ * Site-wide smooth scroll, bridged to GSAP ScrollTrigger so there is ONE scroll
+ * system: Lenis drives smoothing, gsap.ticker drives Lenis' RAF, and every Lenis
+ * scroll updates ScrollTrigger. Under reduced-motion, Lenis is skipped and
+ * ScrollTrigger falls back to native scroll (still works).
+ */
 export function useLenis() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
+    if (prefersReduced) {
+      ScrollTrigger.refresh();
+      return;
+    }
 
     const lenis = new Lenis({
       duration: 1.35,
-      // Custom ease — same curve used across reveals for a coherent feel
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       touchMultiplier: 1.2,
     });
 
-    let rafId = 0;
-    const raf = (time: number) => {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    };
-    rafId = requestAnimationFrame(raf);
+    lenis.on("scroll", ScrollTrigger.update);
+
+    const ticker = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(ticker);
+    gsap.ticker.lagSmoothing(0);
+
+    ScrollTrigger.refresh();
 
     return () => {
-      cancelAnimationFrame(rafId);
+      gsap.ticker.remove(ticker);
+      lenis.off("scroll", ScrollTrigger.update);
       lenis.destroy();
     };
   }, []);
