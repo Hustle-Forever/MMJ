@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useTexture, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -35,10 +36,38 @@ const D = 0.52;
 
 useTexture.preload(COVERS.pink);
 
-export function Notebook({ color = "pink" }: { color?: NotebookColor }) {
+/** Prepare the cover texture; on low-power devices downscale it to 512px. */
+function useCover(color: NotebookColor, lowRes: boolean) {
   const cover = useTexture(COVERS[color]);
-  cover.colorSpace = THREE.SRGBColorSpace;
-  cover.anisotropy = 8;
+  useMemo(() => {
+    cover.colorSpace = THREE.SRGBColorSpace;
+    cover.anisotropy = lowRes ? 1 : 8;
+    const img = cover.image as (HTMLImageElement & { __downscaled?: boolean }) | undefined;
+    if (lowRes && img && !(cover as unknown as { __downscaled?: boolean }).__downscaled) {
+      const max = 512;
+      const scale = Math.min(1, max / Math.max(img.width || max, img.height || max));
+      if (scale < 1) {
+        const cv = document.createElement("canvas");
+        cv.width = Math.round((img.width || max) * scale);
+        cv.height = Math.round((img.height || max) * scale);
+        cv.getContext("2d")?.drawImage(img, 0, 0, cv.width, cv.height);
+        cover.image = cv;
+        cover.needsUpdate = true;
+      }
+      (cover as unknown as { __downscaled?: boolean }).__downscaled = true;
+    }
+  }, [cover, lowRes]);
+  return cover;
+}
+
+export function Notebook({
+  color = "pink",
+  lowRes = false,
+}: {
+  color?: NotebookColor;
+  lowRes?: boolean;
+}) {
+  const cover = useCover(color, lowRes);
 
   return (
     <group>
