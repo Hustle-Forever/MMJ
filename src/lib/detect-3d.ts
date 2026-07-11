@@ -1,9 +1,11 @@
-import { getGPUTier } from "detect-gpu";
-
 /**
  * Client-only 3D capability detection used to decide whether to mount the live
  * <Scene> or fall back to the flat cover. Runs outside the Canvas so low-tier
  * phones never even create a WebGL context.
+ *
+ * detect-gpu is CommonJS — importing it as a named ESM export breaks SSR.
+ * We use a dynamic import inside detect3DTier() so the module only loads on
+ * the client (this function is always called from a useEffect).
  */
 
 /** Cheap WebGL support probe. Loses the context immediately so it isn't consumed. */
@@ -51,7 +53,14 @@ export async function detect3DTier(): Promise<number> {
   if (!hasWebGL()) return 0;
   try {
     const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000));
-    const gpu = await Promise.race([getGPUTier(), timeout]);
+    // Dynamic import — avoids SSR CJS/ESM resolution error. detect-gpu is only
+    // ever called from a client-side useEffect, never on the server.
+    const mod = await import("detect-gpu");
+    const fn =
+      mod.getGPUTier ??
+      (mod as unknown as { default?: { getGPUTier?: typeof mod.getGPUTier } }).default?.getGPUTier;
+    if (!fn) throw new Error("detect-gpu unavailable");
+    const gpu = await Promise.race([fn(), timeout]);
     if (gpu && typeof gpu.tier === "number") return gpu.tier;
   } catch {
     /* fall through to heuristic */
