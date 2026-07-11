@@ -21,7 +21,7 @@ type Form = z.infer<typeof schema>;
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
-  head: () => ({ meta: [{ title: "Checkout · Curated by MMJ" }] }),
+  head: () => ({ meta: [{ title: "Checkout · Curated by MMJ — Notebooks" }] }),
 });
 
 const EMIRATES = [

@@ -16,7 +16,7 @@ export const Route = createFileRoute("/shop/$handle")({
     const p = products.find((x) => x.handle === params.handle);
     return {
       meta: [
-        { title: `${p?.title ?? "Product"} · Curated by MMJ` },
+        { title: `${p?.title ?? "Product"} · Curated by MMJ — Notebooks` },
         { name: "description", content: p?.description },
       ],
     };

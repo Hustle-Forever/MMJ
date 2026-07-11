@@ -79,6 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Curated by MMJ — Notebooks" },
       { name: "author", content: "Curated by MMJ" },
       { name: "theme-color", content: "#f8e6ec" },
       { property: "og:site_name", content: "Curated by MMJ" },
@@ -87,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/logo/logo.jpg", type: "image/jpeg" },
+      { rel: "icon", type: "image/png", href: "/logo/logo.jpg" },
       { rel: "apple-touch-icon", href: "/logo/logo.jpg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },

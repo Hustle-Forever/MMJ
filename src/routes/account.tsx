@@ -4,7 +4,7 @@ import { useLenis } from "@/hooks/use-lenis";
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
-  head: () => ({ meta: [{ title: "Account · Curated by MMJ" }] }),
+  head: () => ({ meta: [{ title: "Account · Curated by MMJ — Notebooks" }] }),
 });
 
 function AccountPage() {
