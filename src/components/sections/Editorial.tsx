@@ -1,27 +1,98 @@
+import { useRef } from "react";
+import { motion, useInView, type Variants } from "motion/react";
+
+const ease = [0.16, 1, 0.3, 1] as const;
+
+const line: Variants = {
+  hidden: { y: "108%", opacity: 0 },
+  visible: (delay: number) => ({
+    y: 0,
+    opacity: 1,
+    transition: { duration: 1.1, ease, delay },
+  }),
+};
+
+const fadeUp: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (delay: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.8, ease, delay },
+  }),
+};
+
 export function Editorial() {
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.25 });
+
   return (
-    <section className="relative overflow-hidden bg-blush py-32 md:py-48">
+    <section ref={ref} className="relative overflow-hidden bg-blush py-32 md:py-48">
       <div className="mx-auto max-w-[1600px] px-6 md:px-10">
-        <p className="mb-8 text-[11px] uppercase tracking-[0.4em] text-blue/60">
+        <motion.p
+          custom={0}
+          variants={fadeUp}
+          initial="hidden"
+          animate={inView ? "visible" : "hidden"}
+          className="mb-8 text-[11px] uppercase tracking-[0.4em] text-blue/60"
+        >
           Editorial · No. 001
-        </p>
-        <h2 className="font-display text-balance text-[13vw] leading-[0.92] text-blue md:text-[8.5vw]">
-          Paper that <span className="font-script italic">listens.</span>
-          <br />
-          Ink that <span className="font-script italic">remembers.</span>
+        </motion.p>
+
+        <h2
+          className="font-display text-balance text-[13vw] leading-[0.92] text-blue md:text-[8.5vw]"
+          aria-label="Paper that listens. Ink that remembers."
+        >
+          {/* Line 1 */}
+          <span className="block overflow-hidden pb-[0.05em]">
+            <motion.span
+              className="block"
+              custom={0.1}
+              variants={line}
+              initial="hidden"
+              animate={inView ? "visible" : "hidden"}
+            >
+              Paper that{" "}
+              <span className="font-script italic">listens.</span>
+            </motion.span>
+          </span>
+          {/* Line 2 */}
+          <span className="block overflow-hidden pb-[0.05em]">
+            <motion.span
+              className="block"
+              custom={0.28}
+              variants={line}
+              initial="hidden"
+              animate={inView ? "visible" : "hidden"}
+            >
+              Ink that{" "}
+              <span className="font-script italic">remembers.</span>
+            </motion.span>
+          </span>
         </h2>
 
         <div className="mt-16 grid grid-cols-1 gap-10 md:grid-cols-12">
-          <p className="text-pretty text-[16px] leading-[1.75] text-blue/75 md:col-span-5 md:col-start-2">
+          <motion.p
+            custom={0.45}
+            variants={fadeUp}
+            initial="hidden"
+            animate={inView ? "visible" : "hidden"}
+            className="text-pretty text-[16px] leading-[1.75] text-blue/75 md:col-span-5 md:col-start-2"
+          >
             Every notebook is bound by hand. Cream 120gsm pages take fountain
             ink without bleeding, a satin ribbon marks your place, and a
             quiet script on the cover reminds you why you started.
-          </p>
-          <p className="text-pretty text-[16px] leading-[1.75] text-blue/75 md:col-span-4 md:col-start-8">
+          </motion.p>
+          <motion.p
+            custom={0.58}
+            variants={fadeUp}
+            initial="hidden"
+            animate={inView ? "visible" : "hidden"}
+            className="text-pretty text-[16px] leading-[1.75] text-blue/75 md:col-span-4 md:col-start-8"
+          >
             This is not a productivity tool. It's a slower object — made for
             morning pages, first drafts, and the sentence you'll return to
             three weeks from now.
-          </p>
+          </motion.p>
         </div>
       </div>
 

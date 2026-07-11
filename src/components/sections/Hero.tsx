@@ -134,21 +134,6 @@ export function Hero() {
           </motion.div>
         </Container>
 
-        {/* Scroll cue */}
-        <motion.div
-          variants={fadeUp(1.6)}
-          initial="hidden"
-          animate="visible"
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <motion.span
-            className="text-caption uppercase tracking-caps text-muted-foreground"
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            Scroll
-          </motion.span>
-        </motion.div>
       </Section>
     </MotionConfig>
   );

@@ -18,7 +18,7 @@ export const COVERS: Record<NotebookColor, string> = {
 export const COLORWAYS: Record<NotebookColor, { stripeA: string; stripeB: string; ink: string }> = {
   pink:  { stripeA: "#F8E6EC", stripeB: "#F4D8DF", ink: "#0B5FA5" },
   blue:  { stripeA: "#0B5FA5", stripeB: "#0A4D8C", ink: "#FFFFFF" },
-  green: { stripeA: "#C8D8B0", stripeB: "#B5C89A", ink: "#3D5C1A" },
+  green: { stripeA: "#C8D8B0", stripeB: "#B5C89A", ink: "#E8DC8A" },
 };
 
 // Linen tint for the hardcover body.

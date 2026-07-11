@@ -110,8 +110,8 @@ export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
       <div
         className="relative"
         style={{
-          height: "clamp(220px, 42svh, 520px)",
-          width: "min(78vw, clamp(200px, 38svh, 480px))",
+          height: "clamp(220px, 54vw, 520px)",
+          width: "min(72vw, clamp(200px, 46vw, 480px))",
         }}
       >
         {/* Always-present flat book — hidden only once the 3D book is confirmed. */}

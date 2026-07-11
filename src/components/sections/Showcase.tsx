@@ -18,10 +18,12 @@ const MOBILE_TIER_MIN = 2;
 // Readable morph colors echoing each product (rose / brand-blue / sage). The
 // big side heading + CTA morph through these as the cover crossfades; body copy
 // stays brand blue for readability.
+// Locked palette only — blue #0B5FA5 is the only readable heading/CTA color.
+// The visual variety between sections comes from the cover crossfade.
 const MORPH: [number, number, number][] = [
-  [176, 87, 122],
-  [11, 95, 165],
-  [94, 123, 68],
+  [11, 95, 165], // blue #0B5FA5
+  [11, 95, 165], // blue #0B5FA5
+  [11, 95, 165], // blue #0B5FA5
 ];
 function morphColor(p: number) {
   const seg = Math.min(2, Math.floor(p * 3));
