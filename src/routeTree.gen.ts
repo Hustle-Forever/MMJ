@@ -12,7 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PrimitivesRouteImport } from './routes/primitives'
 import { Route as HeroPreviewRouteImport } from './routes/hero-preview'
 import { Route as DesignTokensRouteImport } from './routes/design-tokens'
+import { Route as AccountRouteImport } from './routes/account'
+import { Route as JournalRouteImport } from './routes/journal'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopIndexRouteImport } from './routes/shop/index'
+import { Route as ShopHandleRouteImport } from './routes/shop/$handle'
 
 const PrimitivesRoute = PrimitivesRouteImport.update({
   id: '/primitives',
@@ -29,9 +34,34 @@ const DesignTokensRoute = DesignTokensRouteImport.update({
   path: '/design-tokens',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JournalRoute = JournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/shop/',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopHandleRoute = ShopHandleRouteImport.update({
+  id: '/shop/$handle',
+  path: '/shop/$handle',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -40,12 +70,22 @@ export interface FileRoutesByFullPath {
   '/design-tokens': typeof DesignTokensRoute
   '/hero-preview': typeof HeroPreviewRoute
   '/primitives': typeof PrimitivesRoute
+  '/account': typeof AccountRoute
+  '/journal': typeof JournalRoute
+  '/checkout': typeof CheckoutRoute
+  '/shop': typeof ShopIndexRoute
+  '/shop/$handle': typeof ShopHandleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/design-tokens': typeof DesignTokensRoute
   '/hero-preview': typeof HeroPreviewRoute
   '/primitives': typeof PrimitivesRoute
+  '/account': typeof AccountRoute
+  '/journal': typeof JournalRoute
+  '/checkout': typeof CheckoutRoute
+  '/shop': typeof ShopIndexRoute
+  '/shop/$handle': typeof ShopHandleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +93,18 @@ export interface FileRoutesById {
   '/design-tokens': typeof DesignTokensRoute
   '/hero-preview': typeof HeroPreviewRoute
   '/primitives': typeof PrimitivesRoute
+  '/account': typeof AccountRoute
+  '/journal': typeof JournalRoute
+  '/checkout': typeof CheckoutRoute
+  '/shop/': typeof ShopIndexRoute
+  '/shop/$handle': typeof ShopHandleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/design-tokens' | '/hero-preview' | '/primitives'
+  fullPaths: '/' | '/design-tokens' | '/hero-preview' | '/primitives' | '/account' | '/journal' | '/checkout' | '/shop' | '/shop/$handle'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/design-tokens' | '/hero-preview' | '/primitives'
-  id: '__root__' | '/' | '/design-tokens' | '/hero-preview' | '/primitives'
+  to: '/' | '/design-tokens' | '/hero-preview' | '/primitives' | '/account' | '/journal' | '/checkout' | '/shop' | '/shop/$handle'
+  id: '__root__' | '/' | '/design-tokens' | '/hero-preview' | '/primitives' | '/account' | '/journal' | '/checkout' | '/shop/' | '/shop/$handle'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +112,11 @@ export interface RootRouteChildren {
   DesignTokensRoute: typeof DesignTokensRoute
   HeroPreviewRoute: typeof HeroPreviewRoute
   PrimitivesRoute: typeof PrimitivesRoute
+  AccountRoute: typeof AccountRoute
+  JournalRoute: typeof JournalRoute
+  CheckoutRoute: typeof CheckoutRoute
+  ShopIndexRoute: typeof ShopIndexRoute
+  ShopHandleRoute: typeof ShopHandleRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +149,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/journal': {
+      id: '/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof JournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/': {
+      id: '/shop/'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/$handle': {
+      id: '/shop/$handle'
+      path: '/shop/$handle'
+      fullPath: '/shop/$handle'
+      preLoaderRoute: typeof ShopHandleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +192,11 @@ const rootRouteChildren: RootRouteChildren = {
   DesignTokensRoute: DesignTokensRoute,
   HeroPreviewRoute: HeroPreviewRoute,
   PrimitivesRoute: PrimitivesRoute,
+  AccountRoute: AccountRoute,
+  JournalRoute: JournalRoute,
+  CheckoutRoute: CheckoutRoute,
+  ShopIndexRoute: ShopIndexRoute,
+  ShopHandleRoute: ShopHandleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
