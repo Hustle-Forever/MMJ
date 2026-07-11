@@ -102,7 +102,7 @@ export function Film() {
             muted
             loop
             playsInline
-            src="/video/film.mp4"
+            src="/video/vid.mp4"
           />
 
           {/* Glass sheen — floats above the video for depth, pointer-events off */}
