@@ -109,6 +109,12 @@ export function Editorial() {
               <span className="font-script italic opacity-60">·</span>
               <span>Curated by MMJ</span>
               <span className="font-script italic opacity-60">·</span>
+              <img
+                src="/logo/logo.png"
+                alt=""
+                aria-hidden
+                className="inline-block h-[0.85em] w-[0.85em] flex-shrink-0 rounded-full object-cover align-middle opacity-90"
+              />
             </span>
           ))}
         </div>

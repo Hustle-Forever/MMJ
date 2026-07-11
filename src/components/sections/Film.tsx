@@ -1,9 +1,13 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 
 /**
- * Video section — rebranded for Curated by MMJ.
- * The same blush-stripe + mouse-follow spotlight from the hero sits behind the
- * video frame (lower opacity). Rounded glass box, soft shadow, no hard edges.
+ * Video section — Curated by MMJ.
+ * Autoplay, muted, looping inline video. No overlay, no controls.
+ * Blush-stripe backdrop + mouse-follow spotlight from the hero, faded softly.
+ *
+ * Drop the film file at public/video/film.mp4 — the element is ready.
+ * If the file 404s on Vercel, move it to src/assets/video/ and import it
+ * as a bundled asset (same pattern as the cover images).
  */
 export function Film() {
   const glowRef = useRef<HTMLDivElement>(null);
@@ -39,17 +43,17 @@ export function Film() {
 
   return (
     <section className="relative overflow-hidden py-24 md:py-40">
-      {/* Blush stripe backdrop — same as hero but very faded behind the video */}
+      {/* Blush stripe backdrop — very faded, radially masked so it dissolves at edges */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div
-          className="absolute inset-0 opacity-60"
+          className="absolute inset-0 opacity-55"
           style={{
             backgroundImage:
               "repeating-linear-gradient(90deg, var(--blush) 0, var(--blush) 48px, var(--blush-2) 48px, var(--blush-2) 96px)",
             maskImage:
-              "radial-gradient(80% 70% at 50% 50%, #000 0%, transparent 100%)",
+              "radial-gradient(75% 65% at 50% 50%, #000 0%, transparent 100%)",
             WebkitMaskImage:
-              "radial-gradient(80% 70% at 50% 50%, #000 0%, transparent 100%)",
+              "radial-gradient(75% 65% at 50% 50%, #000 0%, transparent 100%)",
           }}
         />
         {/* Mouse-follow spotlight */}
@@ -61,7 +65,7 @@ export function Film() {
               "--fx": "50%",
               "--fy": "50%",
               background:
-                "radial-gradient(38vmax 38vmax at var(--fx) var(--fy), color-mix(in oklab, var(--white) 52%, transparent) 0%, transparent 65%)",
+                "radial-gradient(36vmax 36vmax at var(--fx) var(--fy), color-mix(in oklab, var(--white) 48%, transparent) 0%, transparent 68%)",
               mixBlendMode: "soft-light",
             } as CSSProperties
           }
@@ -71,7 +75,7 @@ export function Film() {
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         {/* Header */}
         <div className="mb-10">
-          <p className="mb-3 text-[11px] uppercase tracking-[0.4em] text-blue/60">
+          <p className="mb-3 text-[11px] uppercase tracking-[0.4em] text-blue/55">
             Curated by MMJ · The Film
           </p>
           <h3 className="font-display text-[9vw] leading-[0.95] text-blue md:text-[4vw]">
@@ -79,43 +83,37 @@ export function Film() {
           </h3>
         </div>
 
-        {/* Video frame — glass, rounded, soft float */}
+        {/* Video frame — glass, rounded corners, soft float shadow */}
         <div
-          className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] ring-1 ring-blue/10"
+          className="relative aspect-[16/9] w-full overflow-hidden rounded-[28px] ring-1 ring-blue/8"
           style={{
             background:
-              "linear-gradient(135deg, var(--blush-2) 0%, var(--blush) 55%, var(--white) 100%)",
+              "linear-gradient(145deg, var(--blush-2) 0%, var(--blush) 50%, var(--white) 100%)",
             boxShadow:
-              "0 50px 90px -30px rgba(11,95,165,0.25), 0 2px 0 rgba(255,255,255,0.7) inset",
+              "0 48px 88px -28px rgba(11,95,165,0.22), 0 1px 0 rgba(255,255,255,0.65) inset",
           }}
         >
-          {/* Glass sheen */}
-          <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-2/5"
-            style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.45), transparent)",
-            }}
-          />
-
-          {/* Placeholder: client supplies the video file */}
+          {/* Autoplay video — muted, looping, no controls, no overlay.
+              File: public/video/film.mp4
+              If /video/ 404s on Vercel, move to src/assets/video/film.mp4 and import. */}
           <video
-            className="absolute inset-0 h-full w-full object-cover opacity-0"
-            playsInline
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
             muted
             loop
-            aria-hidden
+            playsInline
+            src="/video/film.mp4"
           />
 
-          <div className="absolute inset-0 grid place-items-center">
-            <div className="flex flex-col items-center gap-4 text-blue/60">
-              <div className="grid h-20 w-20 place-items-center rounded-full bg-white/80 ring-1 ring-blue/15 backdrop-blur-md">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-              <span className="text-[11px] uppercase tracking-[0.35em]">Film coming soon</span>
-            </div>
-          </div>
+          {/* Glass sheen — floats above the video for depth, pointer-events off */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-[38%]"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.08) 60%, transparent 100%)",
+            }}
+          />
         </div>
       </div>
     </section>
