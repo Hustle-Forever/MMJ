@@ -1,6 +1,6 @@
 # CURATED BY MMJ — Claude Code Build Steps
 
-You cloned the Lovable repo locally. Follow these **in order**. Each block is a prompt you paste into Claude Code in your terminal.
+Follow these **in order**. Each block is a prompt you paste into Claude Code in your terminal.
 
 > **Before you start:** run `/help` (or your skills command) in Claude Code and note the exact names of your installed **UI/UX** and **web-3D** skills. Everywhere below you see `[uiux-skill]` or `[web3d-skill]`, replace it with the real name.
 
@@ -18,7 +18,7 @@ Read the entire repo and report back only — no edits:
 2. Which of these are actually installed AND wired up (not just in package.json):
    GSAP, ScrollTrigger, Lenis, Framer Motion, React Three Fiber, Three.js, Drei.
 3. Where the hero, any 3D scene, and the scroll sections currently live.
-4. Anything Lovable faked (e.g. a static image where real 3D was intended,
+4. Anything that was faked (e.g. a static image where real 3D was intended,
    CSS pseudo-3D, placeholder loops).
 Give me a short punch-list of what's missing vs a luxury 3D product site.
 ```

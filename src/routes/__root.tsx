@@ -12,7 +12,6 @@ import { CartProvider } from "@/lib/cart";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -40,7 +39,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    console.error("root error boundary:", error);
   }, [error]);
 
   return (
@@ -88,8 +87,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: "/logo/logo.jpg" },
-      { rel: "apple-touch-icon", href: "/logo/logo.jpg" },
+      { rel: "icon", type: "image/png", href: "/logo/logo.png" },
+      { rel: "apple-touch-icon", href: "/logo/logo.png" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
