@@ -130,15 +130,17 @@ export function Showcase() {
       aria-label="Signature showcase"
     >
       <div className="sticky top-0 flex h-[100dvh] w-full items-center overflow-hidden">
-        <div className="relative z-10 grid h-full w-full grid-cols-1 items-center gap-8 px-6 md:grid-cols-12 md:px-16">
-          {/* Left copy — heading + CTA morph color with the book. */}
+        <div className="relative z-10 grid h-full w-full grid-cols-1 content-center items-center gap-4 px-6 md:grid-cols-12 md:gap-8 md:px-16">
+          {/* Left copy — heading + CTA morph color with the book.
+              Mobile: text stacks above the book and everything must fit one
+              viewport, so type tightens and the specs move to md+ only. */}
           <div ref={copyRef} className="md:col-span-4" style={{ ["--morph" as string]: "rgb(11 95 165)" }}>
-            <p className="mb-4 text-caption uppercase tracking-caps text-blue/60">The Collection</p>
+            <p className="mb-2 text-caption uppercase tracking-caps text-blue/60 md:mb-4">The Collection</p>
             <h2
               key={active.slug}
               className="font-display leading-[0.9]"
               style={{
-                fontSize: "clamp(2.75rem, 8vw, 4.5rem)",
+                fontSize: "clamp(2.25rem, 5vw + 1rem, 4.5rem)",
                 color: "var(--morph)",
                 animation: "mask-up 900ms cubic-bezier(0.16,1,0.3,1) both",
               }}
@@ -147,14 +149,14 @@ export function Showcase() {
             </h2>
             <p
               key={`${active.slug}-d`}
-              className="mt-6 max-w-md text-pretty leading-[1.7] text-blue/75"
+              className="mt-3 max-w-md text-pretty text-sm leading-[1.6] text-blue/75 md:mt-6 md:text-base md:leading-[1.7]"
               style={{ animation: "mask-up 1100ms cubic-bezier(0.16,1,0.3,1) 100ms both" }}
             >
               {active.description}
             </p>
             <dl
               key={`${active.slug}-s`}
-              className="mt-8 grid grid-cols-2 gap-x-6 gap-y-3 text-caption text-blue/70"
+              className="mt-8 hidden grid-cols-2 gap-x-6 gap-y-3 text-caption text-blue/70 md:grid"
             >
               {active.specs.map((s) => (
                 <div key={s.label} className="border-t border-blue/15 pt-2">
@@ -164,7 +166,7 @@ export function Showcase() {
               ))}
             </dl>
             <button
-              className="mt-8 inline-flex min-h-11 items-center gap-3 rounded-full px-7 text-caption uppercase tracking-caps text-white transition-opacity ease-soft duration-(--duration-micro) hover:opacity-90"
+              className="mt-4 inline-flex min-h-11 items-center gap-3 rounded-full px-7 text-caption uppercase tracking-caps text-white transition-opacity ease-soft duration-(--duration-micro) hover:opacity-90 md:mt-8"
               style={{ background: "var(--morph)" }}
             >
               Shop {active.name}
@@ -174,10 +176,7 @@ export function Showcase() {
 
           {/* Stage — flat crossfade base + 3D overlay. */}
           <div className="relative md:col-span-8">
-            <div
-              className="relative mx-auto"
-              style={{ height: "clamp(240px, 52svh, 560px)", width: "min(85vw, 560px)" }}
-            >
+            <div className="relative mx-auto h-[min(36svh,340px)] w-[min(70vw,300px)] md:h-[clamp(240px,52svh,560px)] md:w-[min(85vw,560px)]">
               {/* Flat crossfade base (always present; hidden once 3D confirmed). */}
               <div
                 className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
@@ -222,7 +221,7 @@ export function Showcase() {
             </div>
 
             {/* Progress dots */}
-            <div className="mt-6 flex items-center justify-center gap-3">
+            <div className="mt-3 flex items-center justify-center gap-3 md:mt-6">
               {products.map((p, i) => (
                 <span
                   key={p.slug}
