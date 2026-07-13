@@ -11,7 +11,6 @@ import {
   COVERS,
   COLORWAYS,
   prepCover,
-  makeBackTexture,
   makeSpineTexture,
 } from "./Notebook";
 
@@ -38,51 +37,76 @@ function ShowcaseBook({
 }) {
   const group = useRef<THREE.Group>(null);
 
-  // Photo-cover textures (front faces)
-  const frontTextures = useTexture([COVERS.pink, COVERS.blue, COVERS.green]) as THREE.Texture[];
-  frontTextures.forEach((t) => prepCover(t, lowRes));
+  // Real photo textures — 3 fronts + 3 backs
+  const photoTextures = useTexture([
+    COVERS.pink.front, COVERS.blue.front, COVERS.green.front,
+    COVERS.pink.back, COVERS.blue.back, COVERS.green.back,
+  ]) as THREE.Texture[];
+  photoTextures.forEach((t) => prepCover(t, lowRes));
+  const frontTextures = photoTextures.slice(0, 3);
+  const backTextures = photoTextures.slice(3, 6);
 
-  // Procedural back + spine textures, one set per colorway
-  const backTextures = useMemo(
-    () => COLORS.map((c) => makeBackTexture(COLORWAYS[c].stripeA, COLORWAYS[c].stripeB, COLORWAYS[c].ink)),
-    [],
-  );
+  // Procedural plain-striped spine textures, one per colorway (no text)
   const spineTextures = useMemo(
-    () => COLORS.map((c) => makeSpineTexture(COLORWAYS[c].stripeA, COLORWAYS[c].stripeB, COLORWAYS[c].ink)),
+    () => COLORS.map((c) => makeSpineTexture(COLORWAYS[c].stripeA, COLORWAYS[c].stripeB)),
     [],
   );
   useEffect(() => () => {
-    backTextures.forEach((t) => t.dispose());
     spineTextures.forEach((t) => t.dispose());
-  }, [backTextures, spineTextures]);
+  }, [spineTextures]);
 
-  // Material refs — 3 front + 3 back + 3 spine
+  // Material refs — 3 front + 3 back + 3 spine, plus body shell + ribbon
   const frontMats = useRef<THREE.MeshStandardMaterial[]>([]);
   const backMats  = useRef<THREE.MeshStandardMaterial[]>([]);
   const spineMats = useRef<THREE.MeshStandardMaterial[]>([]);
+  const shellMat  = useRef<THREE.MeshPhysicalMaterial | null>(null);
+  const ribbonMat = useRef<THREE.MeshPhysicalMaterial | null>(null);
+
+  // Colorway body colors for the crossfade lerp
+  const shellColors  = useMemo(() => COLORS.map((c) => new THREE.Color(COLORWAYS[c].shell)), []);
+  const ribbonColors = useMemo(() => COLORS.map((c) => new THREE.Color(COLORWAYS[c].ribbon)), []);
 
   useFrame(() => {
     const p = progress.current ?? 0;
     if (group.current) group.current.rotation.y = p * Math.PI * 2 * 3; // 3 × 360°
 
-    // Triangle crossfade: Pink → Blue → Green → Pink
+    // Triangle crossfade: Pink → Blue → Green → Pink (weights sum to 1)
     const o = [
       Math.max(tri(p, 0, 1 / 3), tri(p, 1, 1 / 3)),
       tri(p, 1 / 3, 1 / 3),
       tri(p, 2 / 3, 1 / 3),
     ];
 
-    // Apply opacity to all face sets simultaneously
+    // Face crossfade
     [frontMats, backMats, spineMats].forEach((refs) => {
       refs.current.forEach((m, i) => { if (m) m.opacity = o[i]; });
     });
+
+    // Body shell + ribbon blend toward the active colorway
+    if (shellMat.current) {
+      shellMat.current.color.setRGB(
+        o[0] * shellColors[0].r + o[1] * shellColors[1].r + o[2] * shellColors[2].r,
+        o[0] * shellColors[0].g + o[1] * shellColors[1].g + o[2] * shellColors[2].g,
+        o[0] * shellColors[0].b + o[1] * shellColors[1].b + o[2] * shellColors[2].b,
+      );
+    }
+    if (ribbonMat.current) {
+      ribbonMat.current.color.setRGB(
+        o[0] * ribbonColors[0].r + o[1] * ribbonColors[1].r + o[2] * ribbonColors[2].r,
+        o[0] * ribbonColors[0].g + o[1] * ribbonColors[1].g + o[2] * ribbonColors[2].g,
+        o[0] * ribbonColors[0].b + o[1] * ribbonColors[1].b + o[2] * ribbonColors[2].b,
+      );
+    }
   });
 
   return (
     <group ref={group}>
-      <NotebookBody />
+      <NotebookBody
+        shellRef={(m) => { shellMat.current = m; }}
+        ribbonRef={(m) => { ribbonMat.current = m; }}
+      />
 
-      {/* Front covers — stacked transparent planes (one per colorway) */}
+      {/* Front covers — real photos, stacked transparent planes (one per colorway) */}
       {frontTextures.map((tex, i) => (
         <mesh
           key={`front-${i}`}
@@ -102,7 +126,7 @@ function ShowcaseBook({
         </mesh>
       ))}
 
-      {/* Back covers — same crossfade, facing -Z */}
+      {/* Back covers — real photos, same crossfade, facing -Z */}
       {backTextures.map((tex, i) => (
         <mesh
           key={`back-${i}`}
@@ -123,7 +147,7 @@ function ShowcaseBook({
         </mesh>
       ))}
 
-      {/* Spine faces — facing -X, same crossfade */}
+      {/* Spine faces — plain stripes, facing -X, same crossfade */}
       {spineTextures.map((tex, i) => (
         <mesh
           key={`spine-${i}`}
@@ -170,11 +194,17 @@ export default function ShowcaseScene({
       }}
       style={{ width: "100%", height: "100%" }}
     >
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[3, 5, 6]} intensity={0.85} />
-      <directionalLight position={[-4, 1, 3]} intensity={0.5} />
-      <directionalLight position={[0, -3, 4]} intensity={0.22} />
-      {!lowPower && <directionalLight position={[0, 4, -5]} intensity={0.35} color="#ffffff" />}
+      {/* Exposure-true studio rig (same as hero). three.js divides light
+          irradiance by π for Lambert materials (measured: ambient 1.0 →
+          0.32× albedo), so intensities are written as effective × π.
+          Front-face effective sum ≈ 1.0 → the photo covers render at their
+          true colors; side faces sit at ~0.77–0.85 for gentle form shading.
+          Rim stays on even on low power because the book spins 360°. */}
+      <ambientLight intensity={0.66 * Math.PI} />
+      <directionalLight position={[3, 5, 6]} intensity={0.3 * Math.PI} />
+      <directionalLight position={[-4, 1, 3]} intensity={0.14 * Math.PI} />
+      <directionalLight position={[0, -3, 4]} intensity={0.06 * Math.PI} />
+      <directionalLight position={[0, 4, -5]} intensity={0.24 * Math.PI} color="#ffffff" />
 
       <Suspense fallback={null}>
         <ShowcaseBook progress={progress} lowRes={lowPower} />

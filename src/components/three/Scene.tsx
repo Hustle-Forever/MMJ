@@ -81,13 +81,18 @@ export default function Scene({
       }}
       style={{ width: "100%", height: "100%" }}
     >
-      {/* Soft studio: key + fill so no face is muddy, gentle bottom + rim
-          fill (rim dropped on mobile). Tuned to stay just under clipping. */}
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[3, 5, 6]} intensity={0.85} />
-      <directionalLight position={[-4, 1, 3]} intensity={0.5} />
-      <directionalLight position={[0, -3, 4]} intensity={0.22} />
-      {!lowPower && <directionalLight position={[0, 4, -5]} intensity={0.35} color="#ffffff" />}
+      {/* Exposure-true studio rig. three.js divides light irradiance by π
+          for Lambert materials (measured: ambient 1.0 → 0.32× albedo), so
+          intensities are written as effective × π. Front-face effective sum
+          ≈ 1.0 → the photo cover renders at its true colors, the brightest
+          element on the page; side faces get gentle form shading. */}
+      <ambientLight intensity={0.66 * Math.PI} />
+      <directionalLight position={[3, 5, 6]} intensity={0.3 * Math.PI} />
+      <directionalLight position={[-4, 1, 3]} intensity={0.14 * Math.PI} />
+      <directionalLight position={[0, -3, 4]} intensity={0.06 * Math.PI} />
+      {!lowPower && (
+        <directionalLight position={[0, 4, -5]} intensity={0.24 * Math.PI} color="#ffffff" />
+      )}
 
       <Suspense fallback={null}>
         <Rig subtle={lowPower}>

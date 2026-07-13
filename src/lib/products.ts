@@ -1,6 +1,6 @@
-import coverPink from "@/assets/covers/cover_pink.jpg";
-import coverBlue from "@/assets/covers/cover_blue.jpg";
-import coverGreen from "@/assets/covers/cover_green.jpg";
+import coverPink from "@/assets/covers/cover_pink_front.webp";
+import coverBlue from "@/assets/covers/cover_blue_front.webp";
+import coverGreen from "@/assets/covers/cover_green_front.webp";
 
 // Shopify-ready variant shape — swap id/price from Shopify Storefront API later.
 export type ProductVariant = {

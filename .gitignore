@@ -33,3 +33,6 @@ dist-ssr
 
 # Accidental nested duplicate clone — do not track
 /MMJ/
+
+# Raw high-res product photos (processed into webp by scripts/process-covers.ps1)
+src/assets/covers/raw/

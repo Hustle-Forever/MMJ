@@ -2,7 +2,7 @@ import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "
 
 import type { NotebookColor } from "@/components/three/Notebook";
 import { detect3DTier, hasWebGL } from "@/lib/detect-3d";
-import coverPink from "@/assets/covers/cover_pink.jpg";
+import coverPink from "@/assets/covers/cover_pink_front.webp";
 
 // Lazy so three / R3F never ship in the initial bundle and never run on the server.
 const Scene = lazy(() => import("@/components/three/Scene"));
