@@ -127,7 +127,7 @@ export function Hero() {
           </motion.div>
 
           {/* Single calm CTA */}
-          <motion.div variants={fadeUp(1.2)} initial="hidden" animate="visible" className="mt-12">
+          <motion.div variants={fadeUp(1.2)} initial="hidden" animate="visible" className="mt-10">
             <Button variant="primary" size="pill">
               Shop the collection
             </Button>

@@ -28,6 +28,8 @@ export function useLenis() {
     });
 
     lenis.on("scroll", ScrollTrigger.update);
+    // Exposed for programmatic scrolling (browser automation / debugging).
+    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
 
     const ticker = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(ticker);
@@ -38,6 +40,7 @@ export function useLenis() {
     return () => {
       gsap.ticker.remove(ticker);
       lenis.off("scroll", ScrollTrigger.update);
+      delete (window as unknown as { __lenis?: Lenis }).__lenis;
       lenis.destroy();
     };
   }, []);

@@ -36,3 +36,6 @@ dist-ssr
 
 # Raw high-res product photos (processed into webp by scripts/process-covers.ps1)
 src/assets/covers/raw/
+
+# Vercel build output
+.vercel/
