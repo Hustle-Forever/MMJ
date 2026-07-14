@@ -39,3 +39,7 @@ src/assets/covers/raw/
 
 # Vercel build output
 .vercel/
+
+# Environment variables — never commit secrets
+.env
+.env.*

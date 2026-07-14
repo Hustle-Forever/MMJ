@@ -3,7 +3,8 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { useLenis } from "@/hooks/use-lenis";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/sections/Footer";
-import { products } from "@/lib/products";
+import { products as fallback, mapShopifyProduct, type Product } from "@/lib/products";
+import { fetchProduct } from "@/lib/shopify-fns";
 import { useCart } from "@/lib/cart";
 import { hasWebGL } from "@/lib/detect-3d";
 import type { NotebookColor } from "@/components/three/Notebook";
@@ -11,9 +12,19 @@ import type { NotebookColor } from "@/components/three/Notebook";
 const Scene = lazy(() => import("@/components/three/Scene"));
 
 export const Route = createFileRoute("/shop/$handle")({
+  loader: async ({ params }) => {
+    try {
+      const raw = await fetchProduct({ data: params.handle });
+      if (raw) {
+        const mapped = mapShopifyProduct(raw);
+        if (mapped) return mapped;
+      }
+    } catch { /* fall through */ }
+    return fallback.find((p) => p.handle === params.handle) ?? null;
+  },
   component: ProductPage,
-  head: ({ params }) => {
-    const p = products.find((x) => x.handle === params.handle);
+  head: ({ loaderData }) => {
+    const p = loaderData as Product | null;
     return {
       meta: [
         { title: `${p?.title ?? "Product"} · Curated by MMJ — Notebooks` },
@@ -31,9 +42,12 @@ const COLOR_MAP: Record<string, NotebookColor> = {
 
 function ProductPage() {
   useLenis();
+  const product = Route.useLoaderData() as Product | null;
   const { handle } = Route.useParams();
-  const product = products.find((p) => p.handle === handle);
   const { addItem } = useCart();
+
+  // All products for color swatch row — use loader data from shop or static fallback.
+  const allProducts = fallback;
 
   const [variantId, setVariantId] = useState("");
   const [qty, setQty] = useState(1);
@@ -71,7 +85,7 @@ function ProductPage() {
   const notebookColor: NotebookColor = COLOR_MAP[product.handle] ?? "pink";
 
   const handleAdd = () => {
-    addItem(product, variantId, qty);
+    addItem(product, variantId || (variant?.id ?? ""), qty);
     setAdded(true);
     setTimeout(() => setAdded(false), 2200);
   };
@@ -97,7 +111,6 @@ function ProductPage() {
                 height: "clamp(360px, 55vw, 600px)",
               }}
             >
-              {/* Flat fallback */}
               <img
                 src={product.image}
                 alt={product.title}
@@ -109,7 +122,6 @@ function ProductPage() {
                 }}
               />
 
-              {/* 3D book (desktop + WebGL only) */}
               {use3D && (
                 <Suspense fallback={null}>
                   <div className="absolute inset-0 p-10">
@@ -119,9 +131,9 @@ function ProductPage() {
               )}
             </div>
 
-            {/* Color swatch row — links to other colorways */}
+            {/* Color swatch row */}
             <div className="mt-8 flex items-center justify-center gap-4">
-              {products.map((p) => (
+              {allProducts.map((p) => (
                 <Link
                   key={p.handle}
                   to="/shop/$handle"
@@ -148,7 +160,6 @@ function ProductPage() {
 
             <p className="mt-6 text-[16px] leading-[1.75] text-blue/65">{product.description}</p>
 
-            {/* Specs */}
             <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-blue/10 pt-8">
               {product.specs.map((s) => (
                 <div key={s.label}>
@@ -183,10 +194,15 @@ function ProductPage() {
             {/* Add to cart */}
             <button
               onClick={handleAdd}
-              className="mt-6 w-full rounded-full py-4 text-caption uppercase tracking-caps text-white transition-all duration-(--duration-base)"
+              disabled={variant && !variant.available}
+              className="mt-6 w-full rounded-full py-4 text-caption uppercase tracking-caps text-white transition-all duration-(--duration-base) disabled:opacity-40"
               style={{ background: added ? "color-mix(in oklab, var(--blue) 65%, var(--white))" : "var(--blue)" }}
             >
-              {added ? "Added ✓" : "Add to Cart"}
+              {variant && !variant.available
+                ? "Sold out"
+                : added
+                  ? "Added ✓"
+                  : "Add to Cart"}
             </button>
 
             <p className="mt-4 text-center text-[11px] text-blue/30">

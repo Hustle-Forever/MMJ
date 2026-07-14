@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { MotionConfig, motion, type Variants } from "motion/react";
+import { Link } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/layout/Container";
@@ -128,8 +129,8 @@ export function Hero() {
 
           {/* Single calm CTA */}
           <motion.div variants={fadeUp(1.2)} initial="hidden" animate="visible" className="mt-10">
-            <Button variant="primary" size="pill">
-              Shop the collection
+            <Button asChild variant="primary" size="pill">
+              <Link to="/shop">Shop the collection</Link>
             </Button>
           </motion.div>
         </Container>

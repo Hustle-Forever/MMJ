@@ -3,9 +3,19 @@ import { useState } from "react";
 import { useLenis } from "@/hooks/use-lenis";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/sections/Footer";
-import { products, type Product } from "@/lib/products";
+import { products as fallback, mapShopifyProduct, type Product } from "@/lib/products";
+import { fetchProducts } from "@/lib/shopify-fns";
 
 export const Route = createFileRoute("/shop/")({
+  loader: async () => {
+    try {
+      const raw = await fetchProducts();
+      const mapped = raw.map(mapShopifyProduct).filter((p): p is Product => p !== null);
+      return mapped.length > 0 ? mapped : fallback;
+    } catch {
+      return fallback;
+    }
+  },
   component: ShopPage,
   head: () => ({
     meta: [
@@ -36,7 +46,6 @@ function ProductCard({ product: p }: { product: Product }) {
           transform: hovered ? "translateY(-6px)" : "translateY(0)",
         }}
       >
-        {/* Book */}
         <div className="flex aspect-[3/4] items-center justify-center px-10 pt-16 pb-16">
           <img
             src={p.image}
@@ -51,7 +60,6 @@ function ProductCard({ product: p }: { product: Product }) {
           />
         </div>
 
-        {/* "Shop →" slide-up label */}
         <div
           className="absolute inset-x-0 bottom-0 h-14 overflow-hidden"
           style={{ background: `color-mix(in oklab, ${p.hex} 22%, var(--white))` }}
@@ -87,6 +95,8 @@ function ProductCard({ product: p }: { product: Product }) {
 
 function ShopPage() {
   useLenis();
+  const displayProducts = Route.useLoaderData();
+
   return (
     <main className="min-h-screen bg-blush text-blue">
       <Nav />
@@ -101,7 +111,7 @@ function ShopPage() {
         </header>
 
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p) => (
+          {displayProducts.map((p) => (
             <ProductCard key={p.handle} product={p} />
           ))}
         </div>
