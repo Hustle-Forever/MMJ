@@ -137,6 +137,7 @@ export function CartDrawer() {
             </div>
             <Link
               to="/checkout"
+              search={{ payment_intent: undefined, redirect_status: undefined }}
               onClick={closeCart}
               className="block w-full rounded-full bg-blue py-4 text-center text-caption uppercase tracking-caps text-white transition-opacity hover:opacity-90"
             >

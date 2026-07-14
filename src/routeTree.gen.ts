@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PrimitivesRouteImport } from './routes/primitives'
+import { Route as OrderConfirmedRouteImport } from './routes/order-confirmed'
 import { Route as JournalRouteImport } from './routes/journal'
 import { Route as HeroPreviewRouteImport } from './routes/hero-preview'
 import { Route as DesignTokensRouteImport } from './routes/design-tokens'
@@ -22,6 +23,11 @@ import { Route as ShopHandleRouteImport } from './routes/shop/$handle'
 const PrimitivesRoute = PrimitivesRouteImport.update({
   id: '/primitives',
   path: '/primitives',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrderConfirmedRoute = OrderConfirmedRouteImport.update({
+  id: '/order-confirmed',
+  path: '/order-confirmed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JournalRoute = JournalRouteImport.update({
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/design-tokens': typeof DesignTokensRoute
   '/hero-preview': typeof HeroPreviewRoute
   '/journal': typeof JournalRoute
+  '/order-confirmed': typeof OrderConfirmedRoute
   '/primitives': typeof PrimitivesRoute
   '/shop/$handle': typeof ShopHandleRoute
   '/shop/': typeof ShopIndexRoute
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/design-tokens': typeof DesignTokensRoute
   '/hero-preview': typeof HeroPreviewRoute
   '/journal': typeof JournalRoute
+  '/order-confirmed': typeof OrderConfirmedRoute
   '/primitives': typeof PrimitivesRoute
   '/shop/$handle': typeof ShopHandleRoute
   '/shop': typeof ShopIndexRoute
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/design-tokens': typeof DesignTokensRoute
   '/hero-preview': typeof HeroPreviewRoute
   '/journal': typeof JournalRoute
+  '/order-confirmed': typeof OrderConfirmedRoute
   '/primitives': typeof PrimitivesRoute
   '/shop/$handle': typeof ShopHandleRoute
   '/shop/': typeof ShopIndexRoute
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/design-tokens'
     | '/hero-preview'
     | '/journal'
+    | '/order-confirmed'
     | '/primitives'
     | '/shop/$handle'
     | '/shop/'
@@ -119,6 +129,7 @@ export interface FileRouteTypes {
     | '/design-tokens'
     | '/hero-preview'
     | '/journal'
+    | '/order-confirmed'
     | '/primitives'
     | '/shop/$handle'
     | '/shop'
@@ -130,6 +141,7 @@ export interface FileRouteTypes {
     | '/design-tokens'
     | '/hero-preview'
     | '/journal'
+    | '/order-confirmed'
     | '/primitives'
     | '/shop/$handle'
     | '/shop/'
@@ -142,6 +154,7 @@ export interface RootRouteChildren {
   DesignTokensRoute: typeof DesignTokensRoute
   HeroPreviewRoute: typeof HeroPreviewRoute
   JournalRoute: typeof JournalRoute
+  OrderConfirmedRoute: typeof OrderConfirmedRoute
   PrimitivesRoute: typeof PrimitivesRoute
   ShopHandleRoute: typeof ShopHandleRoute
   ShopIndexRoute: typeof ShopIndexRoute
@@ -184,6 +197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/order-confirmed': {
+      id: '/order-confirmed'
+      path: '/order-confirmed'
+      fullPath: '/order-confirmed'
+      preLoaderRoute: typeof OrderConfirmedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/account': {
       id: '/account'
       path: '/account'
@@ -222,6 +242,7 @@ const rootRouteChildren: RootRouteChildren = {
   DesignTokensRoute: DesignTokensRoute,
   HeroPreviewRoute: HeroPreviewRoute,
   JournalRoute: JournalRoute,
+  OrderConfirmedRoute: OrderConfirmedRoute,
   PrimitivesRoute: PrimitivesRoute,
   ShopHandleRoute: ShopHandleRoute,
   ShopIndexRoute: ShopIndexRoute,
