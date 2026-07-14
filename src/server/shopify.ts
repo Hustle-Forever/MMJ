@@ -75,7 +75,7 @@ const VARIANT_FIELDS = `
 const PRODUCT_FIELDS = `
   id handle title description
   variants(first: 20) { edges { node { ${VARIANT_FIELDS} } } }
-  images(first: 1) { edges { node { url altText } } }
+  images(first: 10) { edges { node { url altText } } }
 `;
 
 const CART_LINE_FIELDS = `

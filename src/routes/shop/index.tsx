@@ -11,10 +11,15 @@ export const Route = createFileRoute("/shop/")({
     try {
       const raw = await fetchProducts();
       const mapped = raw.map(mapShopifyProduct).filter((p): p is Product => p !== null);
-      return mapped.length > 0 ? mapped : fallback;
-    } catch {
-      return fallback;
+      if (mapped.length > 0) return mapped;
+      // Shopify returned products but none matched our handles — log and fall back.
+      console.error("[shop] No Shopify products matched MMJ handles. Got handles:", raw.map(p => p.handle));
+    } catch (err) {
+      // Log the real error so it appears in Vercel function logs.
+      console.error("[shop] Shopify fetch failed:", err);
     }
+    // Design-only fallback: price: null → shows "—" instead of a hardcoded number.
+    return fallback;
   },
   component: ShopPage,
   head: () => ({
@@ -87,7 +92,9 @@ function ProductCard({ product: p }: { product: Product }) {
 
       <div className="mt-5 px-1">
         <p className="font-display text-h3 text-blue">{p.title}</p>
-        <p className="mt-1 text-caption text-blue/50">AED {p.price}</p>
+        <p className="mt-1 text-caption text-blue/50">
+          {p.price !== null ? `AED ${p.price}` : "—"}
+        </p>
       </div>
     </Link>
   );

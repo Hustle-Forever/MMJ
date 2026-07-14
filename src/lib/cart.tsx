@@ -263,7 +263,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const itemCount = state.items.reduce((n, i) => n + i.quantity, 0);
   const subtotal = state.items.reduce((n, i) => {
     const v = i.product.variants.find((v) => v.id === i.variantId);
-    return n + (v?.price ?? i.product.price) * i.quantity;
+    return n + (v?.price ?? i.product.price ?? 0) * i.quantity;
   }, 0);
 
   return (

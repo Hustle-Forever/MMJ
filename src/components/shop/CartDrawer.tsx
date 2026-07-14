@@ -69,7 +69,8 @@ export function CartDrawer() {
             <ul className="space-y-3">
               {items.map((item) => {
                 const variant = item.product.variants.find((v) => v.id === item.variantId);
-                const linePrice = (variant?.price ?? item.product.price) * item.quantity;
+                const unitPrice = variant?.price ?? item.product.price;
+                const linePrice = unitPrice !== null ? unitPrice * item.quantity : null;
                 return (
                   <li
                     key={`${item.product.handle}-${item.variantId}`}
@@ -115,7 +116,9 @@ export function CartDrawer() {
                             <Plus className="h-3 w-3" aria-hidden />
                           </button>
                         </div>
-                        <span className="text-caption text-blue">AED {linePrice}</span>
+                        <span className="text-caption text-blue">
+                          {linePrice !== null ? `AED ${linePrice}` : "—"}
+                        </span>
                       </div>
                     </div>
                   </li>

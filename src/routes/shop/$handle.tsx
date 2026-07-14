@@ -18,8 +18,14 @@ export const Route = createFileRoute("/shop/$handle")({
       if (raw) {
         const mapped = mapShopifyProduct(raw);
         if (mapped) return mapped;
+        console.error("[product] Shopify handle not in MMJ catalogue:", raw.handle);
+      } else {
+        console.error("[product] Shopify returned null for handle:", params.handle);
       }
-    } catch { /* fall through */ }
+    } catch (err) {
+      console.error("[product] Shopify fetch failed:", err);
+    }
+    // Design-only fallback — price is null, shows "—".
     return fallback.find((p) => p.handle === params.handle) ?? null;
   },
   component: ProductPage,
@@ -28,7 +34,7 @@ export const Route = createFileRoute("/shop/$handle")({
     return {
       meta: [
         { title: `${p?.title ?? "Product"} · Curated by MMJ — Notebooks` },
-        { name: "description", content: p?.description },
+        { name: "description", content: p?.description || undefined },
       ],
     };
   },
@@ -46,14 +52,13 @@ function ProductPage() {
   const { handle } = Route.useParams();
   const { addItem } = useCart();
 
-  // All products for color swatch row — use loader data from shop or static fallback.
-  const allProducts = fallback;
-
   const [variantId, setVariantId] = useState("");
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [use3D, setUse3D] = useState(false);
   const [ready3D, setReady3D] = useState(false);
+  // null = show 3D/cover; string = show that Shopify CDN image
+  const [activeImage, setActiveImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (product) setVariantId(product.variants[0]?.id ?? "");
@@ -83,6 +88,9 @@ function ProductPage() {
 
   const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   const notebookColor: NotebookColor = COLOR_MAP[product.handle] ?? "pink";
+  const displayPrice = variant?.price ?? product.price;
+  const isSoldOut = variant !== undefined && !variant.available;
+  const hasGallery = product.shopifyImages.length > 0;
 
   const handleAdd = () => {
     addItem(product, variantId || (variant?.id ?? ""), qty);
@@ -102,7 +110,7 @@ function ProductPage() {
         </Link>
 
         <div className="grid grid-cols-1 items-start gap-12 md:grid-cols-2 lg:gap-20">
-          {/* Viewer */}
+          {/* ── Left: viewer + gallery ── */}
           <div>
             <div
               className="relative mx-auto max-w-[480px] overflow-hidden rounded-3xl"
@@ -111,29 +119,87 @@ function ProductPage() {
                 height: "clamp(360px, 55vw, 600px)",
               }}
             >
-              <img
-                src={product.image}
-                alt={product.title}
-                draggable={false}
-                className="absolute inset-0 h-full w-full object-contain p-12 transition-opacity duration-500"
-                style={{
-                  opacity: ready3D ? 0 : 1,
-                  filter: "drop-shadow(0 32px 40px rgba(11,95,165,0.14))",
-                }}
-              />
-
-              {use3D && (
-                <Suspense fallback={null}>
-                  <div className="absolute inset-0 p-10">
-                    <Scene color={notebookColor} onReady={() => setReady3D(true)} />
-                  </div>
-                </Suspense>
+              {activeImage ? (
+                /* Selected Shopify lifestyle photo */
+                <img
+                  src={activeImage}
+                  alt={product.title}
+                  className="absolute inset-0 h-full w-full object-contain p-8"
+                  style={{ filter: "drop-shadow(0 32px 40px rgba(11,95,165,0.14))" }}
+                />
+              ) : (
+                <>
+                  {/* Flat cover — always rendered, hidden once 3D confirms */}
+                  <img
+                    src={product.image}
+                    alt={product.title}
+                    draggable={false}
+                    className="absolute inset-0 h-full w-full object-contain p-12 transition-opacity duration-500"
+                    style={{
+                      opacity: ready3D ? 0 : 1,
+                      filter: "drop-shadow(0 32px 40px rgba(11,95,165,0.14))",
+                    }}
+                  />
+                  {use3D && (
+                    <Suspense fallback={null}>
+                      <div className="absolute inset-0 p-10">
+                        <Scene color={notebookColor} onReady={() => setReady3D(true)} />
+                      </div>
+                    </Suspense>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Color swatch row */}
-            <div className="mt-8 flex items-center justify-center gap-4">
-              {allProducts.map((p) => (
+            {/* Thumbnail strip — 3D book thumb + Shopify images */}
+            {hasGallery && (
+              <div className="mt-4 flex items-center gap-2 overflow-x-auto pb-1">
+                {/* "Back to 3D / cover" thumbnail */}
+                <button
+                  onClick={() => setActiveImage(null)}
+                  aria-label="Show 3D book"
+                  className="h-14 w-10 flex-shrink-0 overflow-hidden rounded-lg transition-all"
+                  style={{
+                    boxShadow: activeImage === null
+                      ? `0 0 0 2px var(--white), 0 0 0 4px var(--blue)`
+                      : "0 0 0 1px rgba(11,95,165,0.15)",
+                  }}
+                >
+                  <img
+                    src={product.image}
+                    alt="Book cover"
+                    className="h-full w-full object-cover"
+                    draggable={false}
+                  />
+                </button>
+
+                {/* Shopify CDN images */}
+                {product.shopifyImages.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveImage(img.url)}
+                    aria-label={img.alt ?? `Photo ${i + 1}`}
+                    className="h-14 w-10 flex-shrink-0 overflow-hidden rounded-lg transition-all"
+                    style={{
+                      boxShadow: activeImage === img.url
+                        ? `0 0 0 2px var(--white), 0 0 0 4px var(--blue)`
+                        : "0 0 0 1px rgba(11,95,165,0.15)",
+                    }}
+                  >
+                    <img
+                      src={img.url}
+                      alt={img.alt ?? product.title}
+                      className="h-full w-full object-cover"
+                      draggable={false}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Colour swatch row */}
+            <div className={`flex items-center justify-center gap-4 ${hasGallery ? "mt-4" : "mt-8"}`}>
+              {fallback.map((p) => (
                 <Link
                   key={p.handle}
                   to="/shop/$handle"
@@ -152,13 +218,17 @@ function ProductPage() {
             </div>
           </div>
 
-          {/* Details */}
+          {/* ── Right: details ── */}
           <div>
             <p className="mb-3 text-caption uppercase tracking-caps text-blue/40">Curated by MMJ</p>
             <h1 className="font-display text-h1 text-blue">{product.title}</h1>
-            <p className="mt-3 font-display text-h3 text-blue">AED {variant?.price ?? product.price}</p>
+            <p className="mt-3 font-display text-h3 text-blue">
+              {displayPrice !== null ? `AED ${displayPrice}` : "—"}
+            </p>
 
-            <p className="mt-6 text-[16px] leading-[1.75] text-blue/65">{product.description}</p>
+            {product.description && (
+              <p className="mt-6 text-[16px] leading-[1.75] text-blue/65">{product.description}</p>
+            )}
 
             <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-blue/10 pt-8">
               {product.specs.map((s) => (
@@ -194,15 +264,15 @@ function ProductPage() {
             {/* Add to cart */}
             <button
               onClick={handleAdd}
-              disabled={variant && !variant.available}
+              disabled={isSoldOut}
               className="mt-6 w-full rounded-full py-4 text-caption uppercase tracking-caps text-white transition-all duration-(--duration-base) disabled:opacity-40"
-              style={{ background: added ? "color-mix(in oklab, var(--blue) 65%, var(--white))" : "var(--blue)" }}
+              style={{
+                background: added
+                  ? "color-mix(in oklab, var(--blue) 65%, var(--white))"
+                  : "var(--blue)",
+              }}
             >
-              {variant && !variant.available
-                ? "Sold out"
-                : added
-                  ? "Added ✓"
-                  : "Add to Cart"}
+              {isSoldOut ? "Sold out" : added ? "Added ✓" : "Add to Cart"}
             </button>
 
             <p className="mt-4 text-center text-[11px] text-blue/30">

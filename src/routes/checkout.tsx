@@ -90,7 +90,9 @@ function CheckoutPage() {
                       <p className="text-[11px] text-blue/40">{v?.title ?? item.product.colorLabel}</p>
                     </div>
                     <p className="text-caption text-blue">
-                      AED {(v?.price ?? item.product.price) * item.quantity}
+                      {(v?.price ?? item.product.price) !== null
+                        ? `AED ${(v?.price ?? item.product.price)! * item.quantity}`
+                        : "—"}
                     </p>
                   </li>
                 );
@@ -100,7 +102,7 @@ function CheckoutPage() {
             <div className="mt-6 space-y-2 border-t border-blue/10 pt-4">
               <div className="flex justify-between text-caption text-blue/50">
                 <span>Subtotal</span>
-                <span>AED {subtotal}</span>
+                <span>{subtotal > 0 ? `AED ${subtotal}` : "—"}</span>
               </div>
               <div className="flex justify-between text-caption text-blue/50">
                 <span>Shipping</span>
