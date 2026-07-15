@@ -4,6 +4,43 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleStripeWebhook } from "./server/stripe-webhook";
 
+async function handleShopifyDebug(): Promise<Response> {
+  const domain = process.env.SHOPIFY_STORE_DOMAIN ?? "";
+  const token = process.env.SHOPIFY_STOREFRONT_TOKEN ?? "";
+
+  const tokenInfo = token
+    ? `${token.slice(0, 6)}...${token.slice(-4)} (len=${token.length})`
+    : "MISSING";
+
+  let apiResult: unknown = null;
+  try {
+    const res = await fetch(`https://${domain}/api/2024-10/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Storefront-Access-Token": token,
+      },
+      body: JSON.stringify({
+        query: `{
+          shop { name }
+          products(first: 10) {
+            edges { node { handle title variants(first:1){ edges{ node{ price{ amount } } } } } }
+          }
+        }`,
+      }),
+    });
+    const body = await res.json();
+    apiResult = { httpStatus: res.status, body };
+  } catch (err) {
+    apiResult = { fetchError: String(err) };
+  }
+
+  return new Response(
+    JSON.stringify({ domain, token: tokenInfo, apiResult }, null, 2),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}
+
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
@@ -47,14 +84,17 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
-    // Intercept the Stripe webhook BEFORE TanStack Start sees the request.
-    // The body stream must be unconsumed for stripe.webhooks.constructEvent.
     const url = new URL(request.url);
-    if (
-      url.pathname === "/api/webhooks/stripe" &&
-      request.method === "POST"
-    ) {
+
+    // Stripe webhook — must intercept before TanStack Start consumes the body.
+    if (url.pathname === "/api/webhooks/stripe" && request.method === "POST") {
       return handleStripeWebhook(request);
+    }
+
+    // Shopify connectivity debug — shows token validity + product count.
+    // Remove once prices are confirmed working.
+    if (url.pathname === "/api/debug-shopify" && request.method === "GET") {
+      return handleShopifyDebug();
     }
 
     try {
