@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleStripeWebhook } from "./server/stripe-webhook";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -46,6 +47,16 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // Intercept the Stripe webhook BEFORE TanStack Start sees the request.
+    // The body stream must be unconsumed for stripe.webhooks.constructEvent.
+    const url = new URL(request.url);
+    if (
+      url.pathname === "/api/webhooks/stripe" &&
+      request.method === "POST"
+    ) {
+      return handleStripeWebhook(request);
+    }
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

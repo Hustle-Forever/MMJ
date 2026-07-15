@@ -13,6 +13,7 @@ import { useCart, type CartItem } from "@/lib/cart";
 import {
   initPaymentIntent,
   finalizeOrder,
+  attachCustomer,
   type CustomerInfo,
   type CheckoutItemInput,
 } from "@/lib/checkout-fns";
@@ -171,8 +172,18 @@ function CheckoutPage() {
     if (payment_intent) return; // 3DS return handled in Effect A
     if (items.length === 0 || subtotal === 0) return;
 
+    // Snapshot cart items NOW — stored in PI metadata for webhook recovery.
+    const piItems: CheckoutItemInput[] = items.map((item) => {
+      const v = item.product.variants.find((vv) => vv.id === item.variantId);
+      return {
+        variantId: item.variantId,
+        quantity: item.quantity,
+        price: v?.price ?? item.product.price ?? 0,
+      };
+    });
+
     setInitiating(true);
-    void initPaymentIntent({ data: { amountAed: subtotal } })
+    void initPaymentIntent({ data: { amountAed: subtotal, items: piItems } })
       .then(({ clientSecret, paymentIntentId }) => {
         setClientSecret(clientSecret);
         setPaymentIntentId(paymentIntentId);
@@ -367,6 +378,15 @@ function CheckoutForm({
 
     // Persist BEFORE stripe.confirmPayment — Stripe may redirect for 3DS.
     saveCheckoutSession(form, checkoutItems);
+
+    // Attach customer to PI so the webhook can create the Shopify order if
+    // the browser closes after Stripe charges but before finalizeOrder runs.
+    // Non-fatal: if this fails the direct flow still completes normally.
+    try {
+      await attachCustomer({ data: { paymentIntentId, customer: form } });
+    } catch (err) {
+      console.warn("[checkout] attachCustomer failed — webhook recovery will lack customer info:", err);
+    }
 
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,

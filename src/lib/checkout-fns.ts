@@ -20,12 +20,32 @@ export type CheckoutItemInput = {
 };
 
 // Create a Stripe PaymentIntent for the given AED amount.
-// Returns clientSecret (for Stripe.js) and paymentIntentId (for server verification).
+// Cart items are stored in PI metadata so the webhook can reconstruct the
+// Shopify order if the browser closes before finalizeOrder completes.
 export const initPaymentIntent = createServerFn()
-  .validator((d: unknown) => d as { amountAed: number })
+  .validator(
+    (d: unknown) =>
+      d as {
+        amountAed: number;
+        items: CheckoutItemInput[];
+      },
+  )
   .handler(async ({ data }) => {
     const { createPaymentIntent } = await import("../server/stripe");
-    return createPaymentIntent(data.amountAed);
+    return createPaymentIntent(data.amountAed, data.items);
+  });
+
+// Attach customer info to an existing PaymentIntent (called just before
+// stripe.confirmPayment so the webhook can build the full Shopify order).
+// Non-fatal if it fails — direct flow still completes normally.
+export const attachCustomer = createServerFn()
+  .validator(
+    (d: unknown) =>
+      d as { paymentIntentId: string; customer: CustomerInfo },
+  )
+  .handler(async ({ data }) => {
+    const { attachCustomerToPaymentIntent } = await import("../server/stripe");
+    await attachCustomerToPaymentIntent(data.paymentIntentId, data.customer);
   });
 
 // Verify a completed PaymentIntent with Stripe's servers, then create the
