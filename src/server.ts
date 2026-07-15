@@ -6,50 +6,36 @@ import { handleStripeWebhook } from "./server/stripe-webhook";
 
 async function handleShopifyDebug(): Promise<Response> {
   const domain = process.env.SHOPIFY_STORE_DOMAIN ?? "";
-  const clientId = process.env.SHOPIFY_CLIENT_ID ?? "";
-  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET ?? "";
+  const shpatToken = process.env.SHOPIFY_STOREFRONT_TOKEN ?? "";
 
-  // Step 1: get Admin OAuth token
-  let adminToken = "";
-  let oauthScope = "";
-  let oauthResult: unknown = null;
-  try {
-    const r = await fetch(`https://${domain}/admin/oauth/access_token`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, grant_type: "client_credentials" }),
-    });
-    const j = await r.json() as { access_token?: string; scope?: string; error?: string };
-    adminToken = j.access_token ?? "";
-    oauthScope = j.scope ?? "";
-    oauthResult = { httpStatus: r.status, scope: oauthScope, hasToken: !!adminToken };
-  } catch (err) {
-    oauthResult = { fetchError: String(err) };
-  }
+  const tokenInfo = shpatToken
+    ? `${shpatToken.slice(0, 10)}...${shpatToken.slice(-4)} (len=${shpatToken.length})`
+    : "MISSING";
 
-  // Step 2: query products via Admin API
+  // Test shpat_ token against ADMIN API (correct endpoint for this token type)
   let productsResult: unknown = null;
-  if (adminToken) {
-    try {
-      const r = await fetch(`https://${domain}/admin/api/2024-10/graphql.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": adminToken },
-        body: JSON.stringify({
-          query: `{ products(first: 20, query: "status:active") { edges { node {
-            handle title
-            variants(first:1){ edges{ node{ price availableForSale } } }
-          } } } }`,
-        }),
-      });
-      const j = await r.json();
-      productsResult = { httpStatus: r.status, body: j };
-    } catch (err) {
-      productsResult = { fetchError: String(err) };
-    }
+  try {
+    const r = await fetch(`https://${domain}/admin/api/2024-10/graphql.json`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": shpatToken,
+      },
+      body: JSON.stringify({
+        query: `{ products(first: 20, query: "status:active") { edges { node {
+          handle title status
+          variants(first:1){ edges{ node{ price availableForSale } } }
+        } } } }`,
+      }),
+    });
+    const j = await r.json();
+    productsResult = { httpStatus: r.status, body: j };
+  } catch (err) {
+    productsResult = { fetchError: String(err) };
   }
 
   return new Response(
-    JSON.stringify({ domain, oauth: oauthResult, products: productsResult }, null, 2),
+    JSON.stringify({ domain, token: tokenInfo, products: productsResult }, null, 2),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }

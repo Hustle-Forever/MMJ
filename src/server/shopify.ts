@@ -55,23 +55,29 @@ type AdminProductNode = {
 };
 
 // ── Admin API fetcher (products) ──────────────────────────────────────────────
-// Uses the same OAuth client_credentials token as order creation.
-// Requires read_products scope: Shopify Admin → Apps → [app] → Configuration →
-// Admin API integration → tick read_products → Install app.
+// Uses the static shpat_ token from SHOPIFY_STOREFRONT_TOKEN env var against
+// the Admin API endpoint. The shpat_ token is an Admin API personal access token
+// generated in Shopify Admin → Apps → Develop apps → API credentials.
+// It needs read_products scope: Configuration tab → tick read_products → Install app
+// → copy the new shpat_ token from API credentials → update SHOPIFY_STOREFRONT_TOKEN
+// in Vercel.
+//
+// NOTE: this is different from the OAuth client_credentials token (SHOPIFY_CLIENT_ID
+// + SHOPIFY_CLIENT_SECRET) which only has write_orders scope and is used for orders.
 
 async function adminFetch<T>(
   query: string,
   variables: Record<string, unknown> = {},
 ): Promise<T> {
   if (!DOMAIN) throw new Error("Missing SHOPIFY_STORE_DOMAIN env var");
-  const { getShopifyAdminToken } = await import("./shopify-admin");
-  const token = await getShopifyAdminToken();
+  const token = STOREFRONT_TOKEN; // shpat_ token — works on Admin API, not Storefront API
+  if (!token) throw new Error("Missing SHOPIFY_STOREFRONT_TOKEN env var");
 
   const res = await fetch(`https://${DOMAIN}/admin/api/2024-10/graphql.json`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Shopify-Access-Token": token,
+      "X-Shopify-Access-Token": token, // Admin API uses this header, not X-Shopify-Storefront-Access-Token
     },
     body: JSON.stringify({ query, variables }),
   });
