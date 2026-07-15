@@ -34,20 +34,88 @@ export type ShopifyCart = {
   lines: { edges: Array<{ node: ShopifyCartLine }> };
 };
 
-// ── Storefront API fetcher ─────────────────────────────────────────────────────
-// Used for both product reads (unauthenticated_read_product_listings scope) and
-// cart mutations. SHOPIFY_STOREFRONT_TOKEN must be the Storefront API access token
-// from Shopify Admin → Apps → [app] → API credentials → "Storefront API access token".
-// It is a 32-char hex string with NO shpat_ prefix.
+// ── Admin API raw types ───────────────────────────────────────────────────────
+// Admin GraphQL 2024-10: ProductVariant.price is a Money scalar (string "75.00"),
+// unlike Storefront API where it's MoneyV2 { amount currencyCode }.
+
+type AdminVariantNode = {
+  id: string;
+  title: string;
+  availableForSale: boolean;
+  price: string;
+};
+
+type AdminProductNode = {
+  id: string;
+  handle: string;
+  title: string;
+  description: string;
+  variants: { edges: Array<{ node: AdminVariantNode }> };
+  images: { edges: Array<{ node: { url: string; altText: string | null } }> };
+};
+
+// ── Admin API fetcher (products) ──────────────────────────────────────────────
+// Uses the same OAuth client_credentials token as order creation.
+// Requires read_products scope: Shopify Admin → Apps → [app] → Configuration →
+// Admin API integration → tick read_products → Install app.
+
+async function adminFetch<T>(
+  query: string,
+  variables: Record<string, unknown> = {},
+): Promise<T> {
+  if (!DOMAIN) throw new Error("Missing SHOPIFY_STORE_DOMAIN env var");
+  const { getShopifyAdminToken } = await import("./shopify-admin");
+  const token = await getShopifyAdminToken();
+
+  const res = await fetch(`https://${DOMAIN}/admin/api/2024-10/graphql.json`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": token,
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`[shopify-admin] HTTP ${res.status}:`, text.slice(0, 300));
+    throw new Error(`Shopify Admin HTTP ${res.status}: ${text}`);
+  }
+  const json = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
+  if (json.errors?.length) {
+    console.error("[shopify-admin] GraphQL errors:", json.errors);
+    throw new Error(json.errors.map((e) => e.message).join(", "));
+  }
+  if (json.data === undefined) throw new Error("No data in Shopify Admin response");
+  return json.data;
+}
+
+// Normalize Admin API scalar price → { amount, currencyCode } so mapShopifyProduct
+// needs no changes. Store currency is AED; Admin GraphQL doesn't return it on the scalar.
+function normalizeAdminProduct(node: AdminProductNode): ShopifyProduct {
+  return {
+    ...node,
+    variants: {
+      edges: node.variants.edges.map((e) => ({
+        node: {
+          ...e.node,
+          price: { amount: e.node.price, currencyCode: "AED" },
+        },
+      })),
+    },
+  };
+}
+
+// ── Storefront API fetcher (cart mutations only) ──────────────────────────────
+// Cart sync is fire-and-forget in cart.tsx — 401 failures are caught silently.
+// Products are read via Admin API above; this is only needed for cart mutations.
 
 export async function shopifyFetch<T>(
   query: string,
   variables: Record<string, unknown> = {},
 ): Promise<T> {
   if (!DOMAIN || !STOREFRONT_TOKEN) {
-    throw new Error(
-      "Missing SHOPIFY_STORE_DOMAIN or SHOPIFY_STOREFRONT_TOKEN env var",
-    );
+    throw new Error("Missing SHOPIFY_STORE_DOMAIN or SHOPIFY_STOREFRONT_TOKEN env var");
   }
   const res = await fetch(`https://${DOMAIN}/api/2024-10/graphql.json`, {
     method: "POST",
@@ -57,30 +125,20 @@ export async function shopifyFetch<T>(
     },
     body: JSON.stringify({ query, variables }),
   });
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`[shopify] Storefront API ${res.status}:`, body.slice(0, 300));
-    throw new Error(`Shopify HTTP ${res.status}: ${body}`);
-  }
+  if (!res.ok) throw new Error(`Shopify HTTP ${res.status}: ${await res.text()}`);
   const json = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
-  if (json.errors?.length) {
-    console.error("[shopify] GraphQL errors:", json.errors);
-    throw new Error(json.errors.map((e) => e.message).join(", "));
-  }
+  if (json.errors?.length) throw new Error(json.errors.map((e) => e.message).join(", "));
   if (json.data === undefined) throw new Error("No data in Shopify response");
   return json.data;
 }
 
 // ── Field fragments ───────────────────────────────────────────────────────────
 
-const VARIANT_FIELDS = `
-  id title availableForSale
-  price { amount currencyCode }
-`;
+const ADMIN_VARIANT_FIELDS = `id title availableForSale price`;
 
-const PRODUCT_FIELDS = `
+const ADMIN_PRODUCT_FIELDS = `
   id handle title description
-  variants(first: 20) { edges { node { ${VARIANT_FIELDS} } } }
+  variants(first: 20) { edges { node { ${ADMIN_VARIANT_FIELDS} } } }
   images(first: 10) { edges { node { url altText } } }
 `;
 
@@ -94,21 +152,23 @@ const CART_FIELDS = `
   lines(first: 50) { edges { node { ${CART_LINE_FIELDS} } } }
 `;
 
-// ── Product queries (Storefront API) ─────────────────────────────────────────
+// ── Product queries (Admin API) ───────────────────────────────────────────────
 
 export async function gqlProducts(): Promise<ShopifyProduct[]> {
-  const data = await shopifyFetch<{
-    products: { edges: Array<{ node: ShopifyProduct }> };
-  }>(`{ products(first: 30) { edges { node { ${PRODUCT_FIELDS} } } } }`);
-  return data.products.edges.map((e) => e.node);
+  const data = await adminFetch<{
+    products: { edges: Array<{ node: AdminProductNode }> };
+  }>(
+    `{ products(first: 30, query: "status:active") { edges { node { ${ADMIN_PRODUCT_FIELDS} } } } }`,
+  );
+  return data.products.edges.map((e) => normalizeAdminProduct(e.node));
 }
 
 export async function gqlProduct(handle: string): Promise<ShopifyProduct | null> {
-  const data = await shopifyFetch<{ product: ShopifyProduct | null }>(
-    `query P($handle:String!){ product(handle:$handle){ ${PRODUCT_FIELDS} } }`,
+  const data = await adminFetch<{ productByHandle: AdminProductNode | null }>(
+    `query P($handle: String!) { productByHandle(handle: $handle) { ${ADMIN_PRODUCT_FIELDS} } }`,
     { handle },
   );
-  return data.product;
+  return data.productByHandle ? normalizeAdminProduct(data.productByHandle) : null;
 }
 
 // ── Cart mutations (Storefront API) ──────────────────────────────────────────

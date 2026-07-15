@@ -6,37 +6,50 @@ import { handleStripeWebhook } from "./server/stripe-webhook";
 
 async function handleShopifyDebug(): Promise<Response> {
   const domain = process.env.SHOPIFY_STORE_DOMAIN ?? "";
-  const token = process.env.SHOPIFY_STOREFRONT_TOKEN ?? "";
+  const clientId = process.env.SHOPIFY_CLIENT_ID ?? "";
+  const clientSecret = process.env.SHOPIFY_CLIENT_SECRET ?? "";
 
-  const tokenInfo = token
-    ? `${token.slice(0, 6)}...${token.slice(-4)} (len=${token.length})`
-    : "MISSING";
-
-  let apiResult: unknown = null;
+  // Step 1: get Admin OAuth token
+  let adminToken = "";
+  let oauthScope = "";
+  let oauthResult: unknown = null;
   try {
-    const res = await fetch(`https://${domain}/api/2024-10/graphql.json`, {
+    const r = await fetch(`https://${domain}/admin/oauth/access_token`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Storefront-Access-Token": token,
-      },
-      body: JSON.stringify({
-        query: `{
-          shop { name }
-          products(first: 10) {
-            edges { node { handle title variants(first:1){ edges{ node{ price{ amount } } } } } }
-          }
-        }`,
-      }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, grant_type: "client_credentials" }),
     });
-    const body = await res.json();
-    apiResult = { httpStatus: res.status, body };
+    const j = await r.json() as { access_token?: string; scope?: string; error?: string };
+    adminToken = j.access_token ?? "";
+    oauthScope = j.scope ?? "";
+    oauthResult = { httpStatus: r.status, scope: oauthScope, hasToken: !!adminToken };
   } catch (err) {
-    apiResult = { fetchError: String(err) };
+    oauthResult = { fetchError: String(err) };
+  }
+
+  // Step 2: query products via Admin API
+  let productsResult: unknown = null;
+  if (adminToken) {
+    try {
+      const r = await fetch(`https://${domain}/admin/api/2024-10/graphql.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": adminToken },
+        body: JSON.stringify({
+          query: `{ products(first: 20, query: "status:active") { edges { node {
+            handle title
+            variants(first:1){ edges{ node{ price availableForSale } } }
+          } } } }`,
+        }),
+      });
+      const j = await r.json();
+      productsResult = { httpStatus: r.status, body: j };
+    } catch (err) {
+      productsResult = { fetchError: String(err) };
+    }
   }
 
   return new Response(
-    JSON.stringify({ domain, token: tokenInfo, apiResult }, null, 2),
+    JSON.stringify({ domain, oauth: oauthResult, products: productsResult }, null, 2),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }
