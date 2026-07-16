@@ -17,6 +17,7 @@ import {
   type CustomerInfo,
   type CheckoutItemInput,
 } from "@/lib/checkout-fns";
+import { getDeliveryFee, FLAT_DELIVERY_FEE } from "@/lib/delivery";
 
 // Publishable key is intentionally client-visible — Stripe designed it that way.
 // VITE_ prefix makes it available in the client bundle via import.meta.env.
@@ -182,7 +183,8 @@ function CheckoutPage() {
       return;
     }
 
-    const total = savedItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    const itemsTotal = savedItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    const total = itemsTotal + getDeliveryFee(form.emirate);
 
     void finalizeOrder({
       data: {
@@ -222,7 +224,7 @@ function CheckoutPage() {
     });
 
     setInitiating(true);
-    void initPaymentIntent({ data: { amountAed: subtotal, items: piItems } })
+    void initPaymentIntent({ data: { amountAed: subtotal + FLAT_DELIVERY_FEE, items: piItems } })
       .then(({ clientSecret, paymentIntentId }) => {
         setClientSecret(clientSecret);
         setPaymentIntentId(paymentIntentId);
@@ -320,11 +322,23 @@ function CheckoutPage() {
                 );
               })}
             </ul>
-            <div className="mt-5 flex justify-between border-t border-blue/10 pt-4">
-              <span className="text-caption text-blue/50">Total</span>
-              <span className="text-caption font-medium text-blue">
-                {subtotal > 0 ? `AED ${subtotal}` : "—"}
-              </span>
+            <div className="mt-5 space-y-2 border-t border-blue/10 pt-4">
+              <div className="flex justify-between">
+                <span className="text-caption text-blue/50">Subtotal</span>
+                <span className="text-caption text-blue">
+                  {subtotal > 0 ? `AED ${subtotal}` : "—"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-caption text-blue/50">Delivery</span>
+                <span className="text-caption text-blue">AED {FLAT_DELIVERY_FEE}</span>
+              </div>
+              <div className="flex justify-between border-t border-blue/10 pt-2">
+                <span className="text-caption font-medium text-blue">Total</span>
+                <span className="text-caption font-medium text-blue">
+                  {subtotal > 0 ? `AED ${subtotal + FLAT_DELIVERY_FEE}` : "—"}
+                </span>
+              </div>
             </div>
           </div>
         </section>
@@ -348,7 +362,7 @@ function CheckoutPage() {
             options={{ clientSecret, appearance: STRIPE_APPEARANCE }}
           >
             <CheckoutForm
-              subtotal={subtotal}
+              subtotal={subtotal + FLAT_DELIVERY_FEE}
               items={items}
               paymentIntentId={paymentIntentId}
               clear={clear}

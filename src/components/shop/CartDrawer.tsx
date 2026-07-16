@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { X, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart";
+import { FLAT_DELIVERY_FEE } from "@/lib/delivery";
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, subtotal, itemCount } = useCart();
@@ -131,9 +132,19 @@ export function CartDrawer() {
         {/* Footer */}
         {items.length > 0 && (
           <div className="space-y-4 border-t border-blue/10 px-6 py-5">
-            <div className="flex items-center justify-between">
-              <span className="text-caption uppercase tracking-caps text-blue/50">Subtotal</span>
-              <span className="font-display text-h3 text-blue">AED {subtotal}</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-caption text-blue/50">Subtotal</span>
+                <span className="text-caption text-blue">AED {subtotal}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-caption text-blue/50">Delivery</span>
+                <span className="text-caption text-blue">AED {FLAT_DELIVERY_FEE}</span>
+              </div>
+              <div className="flex items-center justify-between border-t border-blue/10 pt-2">
+                <span className="text-caption uppercase tracking-caps text-blue/50">Total</span>
+                <span className="font-display text-h3 text-blue">AED {subtotal + FLAT_DELIVERY_FEE}</span>
+              </div>
             </div>
             <Link
               to="/checkout"
@@ -143,9 +154,6 @@ export function CartDrawer() {
             >
               Checkout
             </Link>
-            <p className="text-center text-[11px] text-blue/35">
-              Taxes and shipping calculated at checkout
-            </p>
           </div>
         )}
       </aside>
