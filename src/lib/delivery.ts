@@ -1,17 +1,18 @@
-// Central delivery fee config.
-// Structured as a per-emirate lookup so switching to real rates later
-// is a single-line edit per emirate — no component changes needed.
+// Central delivery fee config — single source of truth for cart, checkout,
+// PaymentIntent amount, and 3DS return calculation.
 export const DELIVERY_FEES: Record<string, number> = {
-  "Abu Dhabi":     0,
-  "Dubai":         0,
-  "Sharjah":       0,
-  "Ajman":         0,
-  "Umm Al Quwain": 0,
-  "Ras Al Khaimah":0,
-  "Fujairah":      0,
+  "Abu Dhabi":     30,
+  "Dubai":         40,
+  "Sharjah":       40,
+  "Ajman":         40,
+  "Umm Al Quwain": 40,
+  "Ras Al Khaimah":40,
+  "Fujairah":      40,
 };
 
-export const FLAT_DELIVERY_FEE = 0; // TEMP: set back to 15 after test payment
+// Shown in cart and order summary before the emirate is selected (worst case / max).
+export const FLAT_DELIVERY_FEE = 40;
+export const DELIVERY_ESTIMATE = "Next-day delivery";
 
 export function getDeliveryFee(emirate?: string): number {
   if (!emirate) return FLAT_DELIVERY_FEE;

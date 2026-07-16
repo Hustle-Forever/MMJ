@@ -65,6 +65,12 @@ export async function attachCustomerToPaymentIntent(
   });
 }
 
+export async function updatePaymentIntentAmount(piId: string, amountAed: number): Promise<void> {
+  await getStripe().paymentIntents.update(piId, {
+    amount: Math.round(amountAed * 100),
+  });
+}
+
 export async function verifyPaymentIntent(id: string): Promise<{
   status: string;
   amount: number;

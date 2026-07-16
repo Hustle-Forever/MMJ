@@ -14,10 +14,11 @@ import {
   initPaymentIntent,
   finalizeOrder,
   attachCustomer,
+  updatePaymentIntent,
   type CustomerInfo,
   type CheckoutItemInput,
 } from "@/lib/checkout-fns";
-import { getDeliveryFee, FLAT_DELIVERY_FEE } from "@/lib/delivery";
+import { getDeliveryFee, FLAT_DELIVERY_FEE, DELIVERY_ESTIMATE } from "@/lib/delivery";
 
 // Publishable key is intentionally client-visible — Stripe designed it that way.
 // VITE_ prefix makes it available in the client bundle via import.meta.env.
@@ -329,8 +330,11 @@ function CheckoutPage() {
                   {subtotal > 0 ? `AED ${subtotal}` : "—"}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-caption text-blue/50">Delivery</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-caption text-blue/50">Delivery</span>
+                  <span className="ml-2 text-[11px] text-blue/30">{DELIVERY_ESTIMATE}</span>
+                </div>
                 <span className="text-caption text-blue">AED {FLAT_DELIVERY_FEE}</span>
               </div>
               <div className="flex justify-between border-t border-blue/10 pt-2">
@@ -362,7 +366,7 @@ function CheckoutPage() {
             options={{ clientSecret, appearance: STRIPE_APPEARANCE }}
           >
             <CheckoutForm
-              subtotal={subtotal + FLAT_DELIVERY_FEE}
+              itemsSubtotal={subtotal}
               items={items}
               paymentIntentId={paymentIntentId}
               clear={clear}
@@ -376,12 +380,12 @@ function CheckoutPage() {
 
 // ── Stripe-embedded checkout form ─────────────────────────────────────────────
 function CheckoutForm({
-  subtotal,
+  itemsSubtotal,
   items,
   paymentIntentId,
   clear,
 }: {
-  subtotal: number;
+  itemsSubtotal: number;
   items: CartItem[];
   paymentIntentId: string;
   clear: () => void;
@@ -394,6 +398,9 @@ function CheckoutForm({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const deliveryFee = getDeliveryFee(form.emirate);
+  const total = itemsSubtotal + deliveryFee;
 
   const update =
     (field: keyof FormData) =>
@@ -428,6 +435,17 @@ function CheckoutForm({
 
     // Persist BEFORE stripe.confirmPayment — Stripe may redirect for 3DS.
     saveCheckoutSession(form, checkoutItems);
+
+    // Update PI amount to the exact emirate-specific delivery fee so that the
+    // Stripe charge matches finalizeOrder.expectedAmountAed exactly.
+    try {
+      await updatePaymentIntent({ data: { paymentIntentId, amountAed: total } });
+    } catch (err) {
+      console.error("[checkout] updatePaymentIntent failed:", err);
+      setFormError("Could not prepare payment. Please try again.");
+      setSubmitting(false);
+      return;
+    }
 
     // Attach customer to PI so the webhook can create the Shopify order if
     // the browser closes after Stripe charges but before finalizeOrder runs.
@@ -471,7 +489,7 @@ function CheckoutForm({
         const { orderNumber } = await finalizeOrder({
           data: {
             paymentIntentId: paymentIntent.id,
-            expectedAmountAed: subtotal,
+            expectedAmountAed: total,
             items: checkoutItems,
             customer: form,
           },
@@ -589,6 +607,36 @@ function CheckoutForm({
         </div>
       </section>
 
+      {/* Order total — updates live as emirate is selected */}
+      <section className="mb-8">
+        <h2 className="mb-5 text-caption uppercase tracking-caps text-blue/40">
+          Order total
+        </h2>
+        <div className="rounded-3xl bg-white/55 p-5 ring-1 ring-blue/8 space-y-2">
+          <div className="flex justify-between">
+            <span className="text-caption text-blue/50">Items</span>
+            <span className="text-caption text-blue">AED {itemsSubtotal}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-caption text-blue/50">Delivery</span>
+              {form.emirate && (
+                <span className="ml-2 text-[11px] text-blue/30">{DELIVERY_ESTIMATE}</span>
+              )}
+            </div>
+            <span className="text-caption text-blue">
+              {form.emirate ? `AED ${deliveryFee}` : "—"}
+            </span>
+          </div>
+          {form.emirate && (
+            <div className="flex justify-between border-t border-blue/10 pt-2">
+              <span className="text-caption font-medium text-blue">Total</span>
+              <span className="text-caption font-medium text-blue">AED {total}</span>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Payment */}
       <section className="mb-8">
         <h2 className="mb-5 text-caption uppercase tracking-caps text-blue/40">
@@ -618,7 +666,7 @@ function CheckoutForm({
         disabled={submitting || !stripe}
         className="w-full rounded-full bg-blue py-5 text-caption uppercase tracking-caps text-white transition-opacity hover:opacity-90 disabled:opacity-50"
       >
-        {submitting ? "Processing…" : `Pay AED ${subtotal} →`}
+        {submitting ? "Processing…" : `Pay AED ${total} →`}
       </button>
     </form>
   );

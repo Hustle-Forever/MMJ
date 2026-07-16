@@ -35,6 +35,19 @@ export const initPaymentIntent = createServerFn()
     return createPaymentIntent(data.amountAed, data.items);
   });
 
+// Update the PaymentIntent amount to match the final emirate-specific delivery
+// fee. Must be called before stripe.confirmPayment so the Stripe charge amount
+// equals the expectedAmountAed passed to finalizeOrder.
+export const updatePaymentIntent = createServerFn()
+  .validator(
+    (d: unknown) =>
+      d as { paymentIntentId: string; amountAed: number },
+  )
+  .handler(async ({ data }) => {
+    const { updatePaymentIntentAmount } = await import("../server/stripe");
+    await updatePaymentIntentAmount(data.paymentIntentId, data.amountAed);
+  });
+
 // Attach customer info to an existing PaymentIntent (called just before
 // stripe.confirmPayment so the webhook can build the full Shopify order).
 // Non-fatal if it fails — direct flow still completes normally.

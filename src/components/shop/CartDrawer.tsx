@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { X, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { FLAT_DELIVERY_FEE } from "@/lib/delivery";
+import { FLAT_DELIVERY_FEE, DELIVERY_ESTIMATE } from "@/lib/delivery";
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, removeItem, updateQty, subtotal, itemCount } = useCart();
@@ -138,7 +138,10 @@ export function CartDrawer() {
                 <span className="text-caption text-blue">AED {subtotal}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-caption text-blue/50">Delivery</span>
+                <div>
+                  <span className="text-caption text-blue/50">Delivery</span>
+                  <span className="ml-2 text-[11px] text-blue/30">{DELIVERY_ESTIMATE}</span>
+                </div>
                 <span className="text-caption text-blue">AED {FLAT_DELIVERY_FEE}</span>
               </div>
               <div className="flex items-center justify-between border-t border-blue/10 pt-2">
