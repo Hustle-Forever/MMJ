@@ -451,6 +451,7 @@ function CheckoutForm({
               line1: form.address,
               city: form.city,
               state: form.emirate,
+              postal_code: "",   // UAE does not use postal codes
               country: "AE",
             },
           },
