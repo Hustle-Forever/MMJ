@@ -3,6 +3,20 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleStripeWebhook } from "./server/stripe-webhook";
+import { isRateLimited, rateLimitedResponse } from "./server/rate-limit";
+
+// Checkout server-fn calls all POST to /api/_server. Rate limit aggressively:
+// 5 requests per minute per IP covers normal checkout flow with headroom.
+const CHECKOUT_LIMIT = 5;
+const CHECKOUT_WINDOW_MS = 60_000;
+
+function clientIp(request: Request): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown"
+  );
+}
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -52,6 +66,15 @@ export default {
     // Stripe webhook — must intercept before TanStack Start consumes the body.
     if (url.pathname === "/api/webhooks/stripe" && request.method === "POST") {
       return handleStripeWebhook(request);
+    }
+
+    // Rate-limit checkout server-fn POSTs (initPaymentIntent, finalizeOrder, etc.)
+    if (url.pathname === "/api/_server" && request.method === "POST") {
+      const ip = clientIp(request);
+      if (isRateLimited(ip, CHECKOUT_LIMIT, CHECKOUT_WINDOW_MS)) {
+        console.warn("[rate-limit] 429 for IP:", ip);
+        return rateLimitedResponse();
+      }
     }
 
     try {
