@@ -55,12 +55,8 @@ type AdminProductNode = {
 };
 
 // ── Admin API fetcher (products) ──────────────────────────────────────────────
-// Uses the static shpat_ token from SHOPIFY_STOREFRONT_TOKEN env var against
-// the Admin API endpoint. The shpat_ token is an Admin API personal access token
-// generated in Shopify Admin → Apps → Develop apps → API credentials.
-// It needs read_products scope: Configuration tab → tick read_products → Install app
-// → copy the new shpat_ token from API credentials → update SHOPIFY_STOREFRONT_TOKEN
-// in Vercel.
+// Uses the public Storefront API token from SHOPIFY_STOREFRONT_TOKEN env var.
+// Token is the public access token from the Headless sales channel in Shopify Admin.
 //
 // NOTE: this is different from the OAuth client_credentials token (SHOPIFY_CLIENT_ID
 // + SHOPIFY_CLIENT_SECRET) which only has write_orders scope and is used for orders.
