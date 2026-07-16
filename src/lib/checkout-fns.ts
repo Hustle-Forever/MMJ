@@ -17,6 +17,7 @@ export type CheckoutItemInput = {
   variantId: string;
   quantity: number;
   price: number;
+  title?: string;
 };
 
 // Create a Stripe PaymentIntent for the given AED amount.

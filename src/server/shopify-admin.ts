@@ -158,17 +158,19 @@ export async function adminCreateOrder(params: {
 }
 
 // ── Idempotency ───────────────────────────────────────────────────────────────
-// Returns true if a Shopify order tagged with this PaymentIntent ID already
+// Returns the existing Shopify order for this PaymentIntent ID, or null if none
 // exists. Called by the webhook handler before every adminCreateOrder call.
-export async function adminOrderExistsForPaymentIntent(
+// Returns the order number so the webhook can send a confirmation email
+// regardless of whether the order was just created or already existed.
+export async function findOrderForPaymentIntent(
   paymentIntentId: string,
-): Promise<boolean> {
+): Promise<{ shopifyOrderId: string; orderNumber: number } | null> {
   const domain = process.env.SHOPIFY_STORE_DOMAIN;
   if (!domain) throw new Error("Missing SHOPIFY_STORE_DOMAIN");
   const token = await getShopifyAdminToken();
 
   // adminCreateOrder tags every order with the PI ID — query that tag.
-  const gql = `query($q:String!){ orders(first:1,query:$q){ edges{ node{ id } } } }`;
+  const gql = `query($q:String!){ orders(first:1,query:$q){ edges{ node{ id orderNumber } } } }`;
   const res = await fetch(`https://${domain}/admin/api/2024-10/graphql.json`, {
     method: "POST",
     headers: {
@@ -182,7 +184,8 @@ export async function adminOrderExistsForPaymentIntent(
     throw new Error(`Shopify idempotency check ${res.status}: ${await res.text()}`);
   }
   const json = (await res.json()) as {
-    data?: { orders?: { edges: unknown[] } };
+    data?: { orders?: { edges: Array<{ node: { id: string; orderNumber: number } }> } };
   };
-  return (json.data?.orders?.edges?.length ?? 0) > 0;
+  const node = json.data?.orders?.edges?.[0]?.node;
+  return node ? { shopifyOrderId: node.id, orderNumber: node.orderNumber } : null;
 }

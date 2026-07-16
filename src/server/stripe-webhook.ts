@@ -4,12 +4,10 @@
 
 import type Stripe from "stripe";
 import { constructWebhookEvent } from "./stripe";
-import {
-  adminOrderExistsForPaymentIntent,
-  adminCreateOrder,
-  type AdminCustomer,
-} from "./shopify-admin";
+import { findOrderForPaymentIntent, adminCreateOrder, type AdminCustomer } from "./shopify-admin";
 import type { ItemMeta } from "./stripe";
+import { getDeliveryFee } from "../lib/delivery";
+import { sendOrderConfirmation } from "./email";
 
 export async function handleStripeWebhook(request: Request): Promise<Response> {
   // ── 1. Read raw body — MUST happen before any other body access ────────
@@ -31,7 +29,6 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
   try {
     event = constructWebhookEvent(rawBody, sig, webhookSecret);
   } catch (err) {
-    // constructEvent throws if signature doesn't match — spoofed or wrong secret.
     console.error(
       "[webhook] Signature verification failed:",
       err instanceof Error ? err.message : String(err),
@@ -40,7 +37,6 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
   }
 
   // ── 3. Only process payment_intent.succeeded ───────────────────────────
-  // Return 200 for all other event types so Stripe doesn't mark them failed.
   if (event.type !== "payment_intent.succeeded") {
     return new Response("ok", { status: 200 });
   }
@@ -51,40 +47,21 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
   );
 
   // ── 4. Verify this PaymentIntent belongs to our checkout ───────────────
-  // source is set in createPaymentIntent; currency is always "aed" for us.
   if (
     pi.currency !== "aed" ||
     pi.amount <= 0 ||
     pi.metadata?.source !== "mmj-checkout"
   ) {
-    console.warn(
-      "[webhook] PaymentIntent not from our checkout — ignoring:",
-      pi.id,
-    );
+    console.warn("[webhook] PaymentIntent not from our checkout — ignoring:", pi.id);
     return new Response("ok", { status: 200 });
   }
 
-  // ── 5. Idempotency check — skip if direct flow already created the order ─
-  try {
-    const exists = await adminOrderExistsForPaymentIntent(pi.id);
-    if (exists) {
-      console.log(
-        "[webhook] Order already exists for PI:",
-        pi.id,
-        "— skipping duplicate",
-      );
-      return new Response("ok", { status: 200 });
-    }
-  } catch (err) {
-    console.error("[webhook] Idempotency check failed:", err);
-    // Return 500 so Stripe retries — transient Shopify API error.
-    return new Response("Internal Server Error", { status: 500 });
-  }
-
-  // ── 6. Reconstruct order from PI metadata ─────────────────────────────
+  // ── 5. Parse items and customer metadata ──────────────────────────────
+  // Parsing happens before the idempotency check so we always have the data
+  // needed to send a confirmation email even when the order already exists
+  // (e.g., finalizeOrder completed before the webhook fired).
   const meta = pi.metadata ?? {};
 
-  // Items were stored at PI creation time (initPaymentIntent).
   let items: ItemMeta[];
   try {
     items = JSON.parse(meta.items ?? "[]") as ItemMeta[];
@@ -93,30 +70,19 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     }
   } catch (err) {
     console.error(
-      "[webhook] Cannot parse items metadata for PI:",
-      pi.id,
-      "| raw:",
-      meta.items,
-      "| error:",
-      err,
+      "[webhook] Cannot parse items metadata for PI:", pi.id,
+      "| raw:", meta.items,
+      "| error:", err,
     );
-    // Items metadata is structural — retrying won't fix it; acknowledge and log.
     return new Response("ok", { status: 200 });
   }
 
-  // Customer info was stored just before stripe.confirmPayment (attachCustomer).
-  // If that call failed (rare), we have no customer info — log and acknowledge.
   if (!meta.customer_f || !meta.customer_email) {
     console.error(
-      "[webhook] Customer metadata missing for PI:",
-      pi.id,
+      "[webhook] Customer metadata missing for PI:", pi.id,
       "— attachCustomer may have failed. Manual order creation required.",
-      "| Payment confirmed by Stripe, amount:",
-      pi.amount / 100,
-      "AED",
+      "| Payment confirmed by Stripe, amount:", pi.amount / 100, "AED",
     );
-    // Returning 200 because retrying won't add missing metadata.
-    // Store owner must create the order manually via the Stripe dashboard PI link.
     return new Response("ok", { status: 200 });
   }
 
@@ -130,26 +96,64 @@ export async function handleStripeWebhook(request: Request): Promise<Response> {
     emirate: meta.customer_emirate ?? "",
   };
 
-  // ── 7. Create Shopify order ────────────────────────────────────────────
-  const totalAmountAed = pi.amount / 100; // fils → AED
+  const totalAmountAed = Math.round(pi.amount / 100);
+  const deliveryFeeAed = getDeliveryFee(customer.emirate);
+
+  // ── 6. Idempotency + order creation ────────────────────────────────────
+  let orderNumber: number;
   try {
-    const { id, orderNumber } = await adminCreateOrder({
-      lineItems: items.map((item) => ({
-        variantGid: item.v,
+    const existing = await findOrderForPaymentIntent(pi.id);
+    if (existing) {
+      console.log(
+        `[webhook] Order #${existing.orderNumber} already exists for PI: ${pi.id}`,
+      );
+      orderNumber = existing.orderNumber;
+    } else {
+      const created = await adminCreateOrder({
+        lineItems: items.map((item) => ({
+          variantGid: item.v,
+          quantity: item.q,
+          price: item.p,
+        })),
+        customer,
+        totalAmount: totalAmountAed,
+        paymentIntentId: pi.id,
+      });
+      console.log(
+        `[webhook] Shopify order #${created.orderNumber} (id=${created.id}) created for PI: ${pi.id}`,
+      );
+      orderNumber = created.orderNumber;
+    }
+  } catch (err) {
+    console.error("[webhook] Order lookup/creation failed for PI:", pi.id, err);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+
+  // ── 7. Send confirmation email (non-fatal) ─────────────────────────────
+  try {
+    await sendOrderConfirmation({
+      to: customer.email,
+      orderNumber,
+      customer: { firstName: customer.firstName, lastName: customer.lastName },
+      items: items.map((item) => ({
+        title: item.t ?? "Notebook",
         quantity: item.q,
-        price: item.p,
+        priceAed: item.p,
       })),
-      customer,
-      totalAmount: totalAmountAed,
-      paymentIntentId: pi.id,
+      address: {
+        line1: customer.address,
+        city: customer.city,
+        emirate: customer.emirate,
+      },
+      deliveryFeeAed,
+      totalAed: totalAmountAed,
     });
     console.log(
-      `[webhook] Shopify order #${orderNumber} (id=${id}) created for PI: ${pi.id}`,
+      `[webhook] Confirmation email sent to ${customer.email} for order #${orderNumber}`,
     );
   } catch (err) {
-    console.error("[webhook] Shopify order creation failed for PI:", pi.id, err);
-    // Return 500 — Stripe will retry (up to 3 days / 87 attempts).
-    return new Response("Internal Server Error", { status: 500 });
+    // Email failure must not fail the webhook response — order is already confirmed.
+    console.error(`[webhook] Email send failed for order #${orderNumber}:`, err);
   }
 
   return new Response("ok", { status: 200 });

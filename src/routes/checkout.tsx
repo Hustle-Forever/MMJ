@@ -219,12 +219,14 @@ function CheckoutPage() {
     if (items.length === 0 || subtotal === 0) return;
 
     // Snapshot cart items NOW — stored in PI metadata for webhook recovery.
+    // title is included so the webhook email can display the product name.
     const piItems: CheckoutItemInput[] = items.map((item) => {
       const v = item.product.variants.find((vv) => vv.id === item.variantId);
       return {
         variantId: item.variantId,
         quantity: item.quantity,
         price: v?.price ?? item.product.price ?? 0,
+        title: item.product.title,
       };
     });
 
@@ -471,6 +473,7 @@ function CheckoutForm({
         variantId: item.variantId,
         quantity: item.quantity,
         price: v?.price ?? item.product.price ?? 0,
+        title: item.product.title,
       };
     });
 

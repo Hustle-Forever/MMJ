@@ -13,11 +13,12 @@ function getStripe(): Stripe {
 }
 
 // Compact shape stored in PI metadata (values must stay < 500 chars each).
-export type ItemMeta = { v: string; q: number; p: number };
+// t = product title (optional — used by webhook to build order confirmation email)
+export type ItemMeta = { v: string; q: number; p: number; t?: string };
 
 export async function createPaymentIntent(
   amountAed: number,
-  items: Array<{ variantId: string; quantity: number; price: number }>,
+  items: Array<{ variantId: string; quantity: number; price: number; title?: string }>,
 ): Promise<{ clientSecret: string; paymentIntentId: string }> {
   const stripe = getStripe();
   const pi = await stripe.paymentIntents.create({
@@ -29,7 +30,7 @@ export async function createPaymentIntent(
     metadata: {
       source: "mmj-checkout",
       items: JSON.stringify(
-        items.map((i) => ({ v: i.variantId, q: i.quantity, p: i.price })),
+        items.map((i) => ({ v: i.variantId, q: i.quantity, p: i.price, t: i.title ?? "" })),
       ),
     },
   });
