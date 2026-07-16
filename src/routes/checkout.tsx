@@ -145,7 +145,7 @@ const STRIPE_APPEARANCE = {
     colorDanger: "#c0392b",
     fontFamily: "Inter, system-ui, sans-serif",
     borderRadius: "12px",
-    fontSizeBase: "14px",
+    fontSizeBase: "16px",
     spacingUnit: "4px",
   },
 };
@@ -555,7 +555,7 @@ function CheckoutForm({
               <select
                 value={form.emirate}
                 onChange={update("emirate")}
-                className={`w-full appearance-none rounded-2xl bg-white/55 px-4 py-3 text-[14px] text-blue outline-none ring-1 transition focus:bg-white focus:ring-blue/40 ${fieldErrors.emirate ? "ring-red-400" : "ring-blue/15"}`}
+                className={`w-full appearance-none rounded-2xl bg-white/55 px-4 py-3 text-[16px] text-blue outline-none ring-1 transition focus:bg-white focus:ring-blue/40 ${fieldErrors.emirate ? "ring-red-400" : "ring-blue/15"}`}
               >
                 <option value="" disabled>
                   Select
@@ -638,7 +638,7 @@ function FormField({
         onChange={onChange}
         placeholder={placeholder}
         maxLength={maxLength}
-        className={`w-full rounded-2xl bg-white/55 px-4 py-3 text-[14px] text-blue outline-none ring-1 placeholder:text-blue/25 transition focus:bg-white focus:ring-blue/40 ${error ? "ring-red-400" : "ring-blue/15"}`}
+        className={`w-full rounded-2xl bg-white/55 px-4 py-3 text-[16px] text-blue outline-none ring-1 placeholder:text-blue/25 transition focus:bg-white focus:ring-blue/40 ${error ? "ring-red-400" : "ring-blue/15"}`}
       />
       {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
     </div>
