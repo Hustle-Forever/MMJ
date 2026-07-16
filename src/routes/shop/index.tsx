@@ -10,12 +10,10 @@ export const Route = createFileRoute("/shop/")({
   loader: async () => {
     try {
       const raw = await fetchProducts();
-      const mapped = raw.map(mapShopifyProduct).filter((p): p is Product => p !== null);
+      const mapped = raw.map(mapShopifyProduct);
       if (mapped.length > 0) return mapped;
-      // Shopify returned products but none matched our handles — log and fall back.
-      console.error("[shop] No Shopify products matched MMJ handles. Got handles:", raw.map(p => p.handle));
+      console.error("[shop] Shopify returned 0 products");
     } catch (err) {
-      // Log the real error so it appears in Vercel function logs.
       console.error("[shop] Shopify fetch failed:", err);
     }
     // Design-only fallback: price: null → shows "—" instead of a hardcoded number.
@@ -112,7 +110,7 @@ function ShopPage() {
           <p className="mb-4 text-caption uppercase tracking-caps text-blue/50">Curated by MMJ</p>
           <h1 className="font-display text-h1 text-blue">The Collection</h1>
           <p className="mt-6 max-w-md text-[16px] leading-[1.75] text-blue/65">
-            Three hardcover notebooks. Cream pages, satin ribbon, and a quiet script
+            Hardcover notebooks. Cream pages, satin ribbon, and a quiet script
             that reminds you why you started.
           </p>
         </header>

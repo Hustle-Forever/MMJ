@@ -15,17 +15,12 @@ export const Route = createFileRoute("/shop/$handle")({
   loader: async ({ params }) => {
     try {
       const raw = await fetchProduct({ data: params.handle });
-      if (raw) {
-        const mapped = mapShopifyProduct(raw);
-        if (mapped) return mapped;
-        console.error("[product] Shopify handle not in MMJ catalogue:", raw.handle);
-      } else {
-        console.error("[product] Shopify returned null for handle:", params.handle);
-      }
+      if (raw) return mapShopifyProduct(raw);
+      console.error("[product] Shopify returned null for handle:", params.handle);
     } catch (err) {
       console.error("[product] Shopify fetch failed:", err);
     }
-    // Design-only fallback — price is null, shows "—".
+    // Fallback for the 3 signature products when Shopify is unreachable.
     return fallback.find((p) => p.handle === params.handle) ?? null;
   },
   component: ProductPage,
@@ -60,14 +55,18 @@ function ProductPage() {
   // null = show 3D/cover; string = show that Shopify CDN image
   const [activeImage, setActiveImage] = useState<string | null>(null);
 
+  // Only signature products with a known cover texture get the 3D viewer.
+  const has3D = product !== null && product.handle in COLOR_MAP;
+
   useEffect(() => {
     if (product) setVariantId(product.variants[0]?.id ?? "");
   }, [product]);
 
   useEffect(() => {
+    if (!has3D) return;
     const desktop = window.matchMedia("(min-width: 768px)");
     if (desktop.matches) setUse3D(hasWebGL());
-  }, []);
+  }, [has3D]);
 
   if (!product) {
     return (

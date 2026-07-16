@@ -16,13 +16,13 @@ export type ShopifyImage = { url: string; alt: string | null };
 export type Product = {
   id: string;
   handle: string;
-  slug: "blush-pink" | "ocean-blue" | "sage-green";
+  slug: string;
   name: string;
   title: string;
   colorLabel: string;
   hex: string;
   scriptColor: string;
-  image: string;            // bundled local cover WebP (always present)
+  image: string;            // bundled WebP for signature products; Shopify CDN URL for others
   shopifyImages: ShopifyImage[]; // additional CDN images from Shopify
   description: string;
   mood: string;
@@ -95,35 +95,57 @@ const OPTION_BY_HANDLE: Record<string, string> = {
 
 /**
  * Merge live Shopify product data with local MMJ editorial metadata.
- * Price, description, availability, and images come exclusively from Shopify.
- * Colors, specs, mood, and cover WebP come from local metadata.
+ * Price, description, availability, and images always come from Shopify.
+ * Colors, specs, mood, and cover WebP come from local metadata for the 3
+ * signature products. Unknown products render entirely from Shopify data.
  */
-export function mapShopifyProduct(sp: ShopifyProduct): Product | null {
+export function mapShopifyProduct(sp: ShopifyProduct): Product {
   const meta = META[sp.handle];
-  if (!meta) return null; // Shopify product handle not in MMJ catalogue — skip
 
   const variants: ProductVariant[] = sp.variants.edges.map((e) => ({
     id: e.node.id,
     title: e.node.title,
-    option: OPTION_BY_HANDLE[sp.handle] ?? "pink",
-    price: Math.round(parseFloat(e.node.price.amount)), // always a number from Shopify
+    option: OPTION_BY_HANDLE[sp.handle] ?? e.node.title.toLowerCase(),
+    price: Math.round(parseFloat(e.node.price.amount)),
     available: e.node.availableForSale,
   }));
 
-  // Price comes from Shopify only — no numeric fallback.
   const price = variants[0]?.price ?? null;
+  const allImages = sp.images.edges.map((e) => ({ url: e.node.url, alt: e.node.altText }));
 
+  if (!meta) {
+    // Unknown product — built entirely from Shopify data, no 3D cover.
+    // image = first Shopify photo (used as the main display image).
+    // shopifyImages = remaining photos shown in the gallery strip.
+    const [first, ...rest] = allImages;
+    return {
+      id: sp.id,
+      handle: sp.handle,
+      slug: sp.handle,
+      name: sp.title,
+      title: sp.title,
+      colorLabel: variants[0]?.title ?? sp.title,
+      hex: "#F5F0EB",
+      scriptColor: "#0B5FA5",
+      image: first?.url ?? "",
+      shopifyImages: rest,
+      description: sp.description,
+      mood: "",
+      price,
+      variants,
+      specs: [],
+    };
+  }
+
+  // Signature product — editorial metadata merged with live Shopify data.
   return {
     id: sp.id,
     handle: sp.handle,
     title: sp.title,
-    description: sp.description, // from Shopify — no fallback text
+    description: sp.description,
     variants,
     price,
-    shopifyImages: sp.images.edges.map((e) => ({
-      url: e.node.url,
-      alt: e.node.altText,
-    })),
+    shopifyImages: allImages,
     ...meta,
   };
 }
