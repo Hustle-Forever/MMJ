@@ -3,6 +3,7 @@
 
 const DOMAIN = process.env.SHOPIFY_STORE_DOMAIN ?? "";
 const STOREFRONT_TOKEN = process.env.SHOPIFY_STOREFRONT_TOKEN ?? "";
+console.log("[shopify] Using token:", DOMAIN, STOREFRONT_TOKEN?.slice(0, 8));
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
