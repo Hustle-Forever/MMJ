@@ -59,6 +59,45 @@ const UAE_EMIRATES = [
   "Fujairah",
 ];
 
+// ── Validation ────────────────────────────────────────────────────────────────
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_RE = /^\+?[\d\s\-(). ]{7,20}$/;
+
+const FIELD_MAX: Record<keyof FormData, number> = {
+  firstName: 100, lastName: 100, email: 254,
+  phone: 20, address: 200, city: 100, emirate: 50,
+};
+
+type FieldErrors = Partial<Record<keyof FormData, string>>;
+
+function validateForm(form: FormData): FieldErrors {
+  const errors: FieldErrors = {};
+  const req = (v: string) => !v.trim();
+
+  if (req(form.firstName)) errors.firstName = "Required";
+  else if (form.firstName.length > FIELD_MAX.firstName) errors.firstName = "Too long (max 100 chars)";
+
+  if (req(form.lastName)) errors.lastName = "Required";
+  else if (form.lastName.length > FIELD_MAX.lastName) errors.lastName = "Too long (max 100 chars)";
+
+  if (req(form.email)) errors.email = "Required";
+  else if (!EMAIL_RE.test(form.email)) errors.email = "Enter a valid email address";
+  else if (form.email.length > FIELD_MAX.email) errors.email = "Too long";
+
+  if (req(form.phone)) errors.phone = "Required";
+  else if (!PHONE_RE.test(form.phone.trim())) errors.phone = "Enter a valid phone number (e.g. +971 50 000 0000)";
+
+  if (req(form.address)) errors.address = "Required";
+  else if (form.address.length > FIELD_MAX.address) errors.address = "Too long (max 200 chars)";
+
+  if (req(form.city)) errors.city = "Required";
+  else if (form.city.length > FIELD_MAX.city) errors.city = "Too long (max 100 chars)";
+
+  if (!form.emirate) errors.emirate = "Please select an emirate";
+
+  return errors;
+}
+
 // ── Session helpers — preserve form data across Stripe 3DS redirects ──────────
 const SK_FORM = "mmj_cf";
 const SK_ITEMS = "mmj_ci";
@@ -338,31 +377,28 @@ function CheckoutForm({
   const navigate = useNavigate();
 
   const [form, setForm] = useState<FormData>(EMPTY_FORM);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const update =
     (field: keyof FormData) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+      if (fieldErrors[field]) setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
 
-    const required = [
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "address",
-      "city",
-      "emirate",
-    ] as const;
-    if (required.some((k) => !form[k].trim())) {
-      setFormError("Please fill in all required fields.");
+    const errors = validateForm(form);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      setFormError("Please correct the errors above.");
       return;
     }
+    setFieldErrors({});
 
     setSubmitting(true);
     setFormError(null);
@@ -456,12 +492,16 @@ function CheckoutForm({
               value={form.firstName}
               onChange={update("firstName")}
               placeholder="Maryam"
+              maxLength={FIELD_MAX.firstName}
+              error={fieldErrors.firstName}
             />
             <FormField
               label="Last name"
               value={form.lastName}
               onChange={update("lastName")}
               placeholder="Al Jaber"
+              maxLength={FIELD_MAX.lastName}
+              error={fieldErrors.lastName}
             />
           </div>
           <FormField
@@ -470,6 +510,8 @@ function CheckoutForm({
             value={form.email}
             onChange={update("email")}
             placeholder="hello@example.com"
+            maxLength={FIELD_MAX.email}
+            error={fieldErrors.email}
           />
           <FormField
             label="Phone"
@@ -477,6 +519,8 @@ function CheckoutForm({
             value={form.phone}
             onChange={update("phone")}
             placeholder="+971 50 000 0000"
+            maxLength={FIELD_MAX.phone}
+            error={fieldErrors.phone}
           />
         </div>
       </section>
@@ -492,6 +536,8 @@ function CheckoutForm({
             value={form.address}
             onChange={update("address")}
             placeholder="Villa 12, Street 5, Al Bateen"
+            maxLength={FIELD_MAX.address}
+            error={fieldErrors.address}
           />
           <div className="grid grid-cols-2 gap-4">
             <FormField
@@ -499,6 +545,8 @@ function CheckoutForm({
               value={form.city}
               onChange={update("city")}
               placeholder="Abu Dhabi"
+              maxLength={FIELD_MAX.city}
+              error={fieldErrors.city}
             />
             <div>
               <label className="mb-1.5 block text-[11px] uppercase tracking-[0.2em] text-blue/50">
@@ -507,7 +555,7 @@ function CheckoutForm({
               <select
                 value={form.emirate}
                 onChange={update("emirate")}
-                className="w-full appearance-none rounded-2xl bg-white/55 px-4 py-3 text-[14px] text-blue outline-none ring-1 ring-blue/15 transition focus:bg-white focus:ring-blue/40"
+                className={`w-full appearance-none rounded-2xl bg-white/55 px-4 py-3 text-[14px] text-blue outline-none ring-1 transition focus:bg-white focus:ring-blue/40 ${fieldErrors.emirate ? "ring-red-400" : "ring-blue/15"}`}
               >
                 <option value="" disabled>
                   Select
@@ -518,6 +566,9 @@ function CheckoutForm({
                   </option>
                 ))}
               </select>
+              {fieldErrors.emirate && (
+                <p className="mt-1 text-[11px] text-red-500">{fieldErrors.emirate}</p>
+              )}
             </div>
           </div>
         </div>
@@ -565,12 +616,16 @@ function FormField({
   onChange,
   placeholder,
   type = "text",
+  maxLength,
+  error,
 }: {
   label: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   type?: string;
+  maxLength?: number;
+  error?: string;
 }) {
   return (
     <div>
@@ -582,8 +637,10 @@ function FormField({
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full rounded-2xl bg-white/55 px-4 py-3 text-[14px] text-blue outline-none ring-1 ring-blue/15 placeholder:text-blue/25 transition focus:bg-white focus:ring-blue/40"
+        maxLength={maxLength}
+        className={`w-full rounded-2xl bg-white/55 px-4 py-3 text-[14px] text-blue outline-none ring-1 placeholder:text-blue/25 transition focus:bg-white focus:ring-blue/40 ${error ? "ring-red-400" : "ring-blue/15"}`}
       />
+      {error && <p className="mt-1 text-[11px] text-red-500">{error}</p>}
     </div>
   );
 }

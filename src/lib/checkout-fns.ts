@@ -48,6 +48,21 @@ export const attachCustomer = createServerFn()
     await attachCustomerToPaymentIntent(data.paymentIntentId, data.customer);
   });
 
+// ── Server-side customer validation ──────────────────────────────────────────
+const SERVER_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const SERVER_PHONE_RE = /^\+?[\d\s\-(). ]{7,20}$/;
+const VALID_EMIRATES = ["Abu Dhabi","Dubai","Sharjah","Ajman","Umm Al Quwain","Ras Al Khaimah","Fujairah"];
+
+function assertCustomer(c: CustomerInfo): void {
+  if (!c.firstName?.trim() || c.firstName.length > 100) throw new Error("Invalid first name");
+  if (!c.lastName?.trim() || c.lastName.length > 100) throw new Error("Invalid last name");
+  if (!SERVER_EMAIL_RE.test(c.email ?? "")) throw new Error("Invalid email address");
+  if (!SERVER_PHONE_RE.test((c.phone ?? "").trim())) throw new Error("Invalid phone number");
+  if (!c.address?.trim() || c.address.length > 200) throw new Error("Invalid address");
+  if (!c.city?.trim() || c.city.length > 100) throw new Error("Invalid city");
+  if (!VALID_EMIRATES.includes(c.emirate ?? "")) throw new Error("Invalid emirate");
+}
+
 // Verify a completed PaymentIntent with Stripe's servers, then create the
 // Shopify order via Admin API. Never trust the client on payment status —
 // we re-fetch the PaymentIntent from Stripe to confirm it actually succeeded.
@@ -62,6 +77,8 @@ export const finalizeOrder = createServerFn()
       },
   )
   .handler(async ({ data }) => {
+    assertCustomer(data.customer);
+
     const { verifyPaymentIntent } = await import("../server/stripe");
     const { adminCreateOrder } = await import("../server/shopify-admin");
 
