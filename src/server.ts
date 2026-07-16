@@ -4,42 +4,6 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleStripeWebhook } from "./server/stripe-webhook";
 
-async function handleShopifyDebug(): Promise<Response> {
-  const domain = process.env.SHOPIFY_STORE_DOMAIN ?? "";
-  const shpatToken = process.env.SHOPIFY_STOREFRONT_TOKEN ?? "";
-
-  const tokenInfo = shpatToken
-    ? `${shpatToken.slice(0, 10)}...${shpatToken.slice(-4)} (len=${shpatToken.length})`
-    : "MISSING";
-
-  // Test shpat_ token against ADMIN API (correct endpoint for this token type)
-  let productsResult: unknown = null;
-  try {
-    const r = await fetch(`https://${domain}/admin/api/2024-10/graphql.json`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": shpatToken,
-      },
-      body: JSON.stringify({
-        query: `{ products(first: 20, query: "status:active") { edges { node {
-          handle title status
-          variants(first:1){ edges{ node{ price availableForSale } } }
-        } } } }`,
-      }),
-    });
-    const j = await r.json();
-    productsResult = { httpStatus: r.status, body: j };
-  } catch (err) {
-    productsResult = { fetchError: String(err) };
-  }
-
-  return new Response(
-    JSON.stringify({ domain, token: tokenInfo, products: productsResult }, null, 2),
-    { status: 200, headers: { "Content-Type": "application/json" } },
-  );
-}
-
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
@@ -88,12 +52,6 @@ export default {
     // Stripe webhook — must intercept before TanStack Start consumes the body.
     if (url.pathname === "/api/webhooks/stripe" && request.method === "POST") {
       return handleStripeWebhook(request);
-    }
-
-    // Shopify connectivity debug — shows token validity + product count.
-    // Remove once prices are confirmed working.
-    if (url.pathname === "/api/debug-shopify" && request.method === "GET") {
-      return handleShopifyDebug();
     }
 
     try {
