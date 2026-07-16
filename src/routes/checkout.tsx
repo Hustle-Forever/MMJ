@@ -19,6 +19,10 @@ import {
   type CheckoutItemInput,
 } from "@/lib/checkout-fns";
 import { getDeliveryFee, FLAT_DELIVERY_FEE, DELIVERY_ESTIMATE } from "@/lib/delivery";
+import { MapPin } from "lucide-react";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import { LocationPicker } from "@/components/checkout/LocationPicker";
+import type { GeoAddress } from "@/lib/geocoding";
 
 // Publishable key is intentionally client-visible — Stripe designed it that way.
 // VITE_ prefix makes it available in the client bundle via import.meta.env.
@@ -402,6 +406,43 @@ function CheckoutForm({
   const deliveryFee = getDeliveryFee(form.emirate);
   const total = itemsSubtotal + deliveryFee;
 
+  // ── Geolocation / location picker ────────────────────────────────────────
+  const { state: geoState, request: requestGeo, reset: resetGeo } = useGeolocation();
+  const [geoSupported, setGeoSupported] = useState(false);
+  const [pickerCoords, setPickerCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Detect support on client (navigator is undefined on server).
+  useEffect(() => {
+    setGeoSupported(typeof navigator !== "undefined" && "geolocation" in navigator);
+  }, []);
+
+  // Open picker as soon as coordinates arrive.
+  useEffect(() => {
+    if (geoState.status === "success") {
+      setPickerCoords({ lat: geoState.lat, lng: geoState.lng });
+      resetGeo();
+    }
+  }, [geoState.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLocationConfirm = (addr: GeoAddress) => {
+    setPickerCoords(null);
+    setForm((prev) => ({
+      ...prev,
+      address: addr.street || prev.address,
+      city: addr.city || prev.city,
+      emirate: addr.emirate || prev.emirate,
+    }));
+    // Clear validation errors for any field that was just filled.
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      if (addr.street) delete next.address;
+      if (addr.city) delete next.city;
+      if (addr.emirate) delete next.emirate;
+      return next;
+    });
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
   const update =
     (field: keyof FormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -564,14 +605,48 @@ function CheckoutForm({
           Delivery address
         </h2>
         <div className="space-y-4">
-          <FormField
-            label="Street address"
-            value={form.address}
-            onChange={update("address")}
-            placeholder="Villa 12, Street 5, Al Bateen"
-            maxLength={FIELD_MAX.address}
-            error={fieldErrors.address}
-          />
+          {/* Street address — "Locate me" button sits in the label row */}
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-[11px] uppercase tracking-[0.2em] text-blue/50">
+                Street address
+              </label>
+              {geoSupported && (
+                <button
+                  type="button"
+                  onClick={requestGeo}
+                  disabled={geoState.status === "requesting"}
+                  className="flex items-center gap-1.5 rounded-full bg-blue/8 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-blue transition hover:bg-blue/15 disabled:opacity-50"
+                >
+                  {geoState.status === "requesting" ? (
+                    <>
+                      <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border border-blue/30 border-t-blue" />
+                      Locating…
+                    </>
+                  ) : (
+                    <>
+                      <MapPin className="h-3 w-3" aria-hidden />
+                      Locate me
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+            <input
+              type="text"
+              value={form.address}
+              onChange={update("address")}
+              placeholder="Villa 12, Street 5, Al Bateen"
+              maxLength={FIELD_MAX.address}
+              className={`w-full rounded-2xl bg-white/55 px-4 py-3 text-[16px] text-blue outline-none ring-1 placeholder:text-blue/25 transition focus:bg-white focus:ring-blue/40 ${fieldErrors.address ? "ring-red-400" : "ring-blue/15"}`}
+            />
+            {fieldErrors.address && (
+              <p className="mt-1 text-[11px] text-red-500">{fieldErrors.address}</p>
+            )}
+            {geoState.status === "error" && (
+              <p className="mt-1 text-[11px] text-blue/40">{geoState.message}</p>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <FormField
               label="City"
@@ -668,6 +743,16 @@ function CheckoutForm({
       >
         {submitting ? "Processing…" : `Pay AED ${total} →`}
       </button>
+
+      {/* Location picker modal — mounts only after user taps "Locate me" */}
+      {pickerCoords && (
+        <LocationPicker
+          initialLat={pickerCoords.lat}
+          initialLng={pickerCoords.lng}
+          onConfirm={handleLocationConfirm}
+          onCancel={() => setPickerCoords(null)}
+        />
+      )}
     </form>
   );
 }
