@@ -115,18 +115,20 @@ export const finalizeOrder = createServerFn()
     // Idempotency check: the Stripe webhook may have already created this order
     // (webhook fires ~simultaneously with finalizeOrder; webhook often wins).
     // Return the existing order rather than creating a duplicate.
+    // Idempotency check: webhook may have already created this order.
     const existing = await findOrderForPaymentIntent(data.paymentIntentId);
     if (existing) {
       console.log(
         `[finalizeOrder] Order #${existing.orderNumber} already created by webhook for PI: ${data.paymentIntentId}`,
       );
+      // Webhook already sent the email when it created the order — don't duplicate.
       return {
         id: parseInt(existing.shopifyOrderId.split("/").pop() ?? "0", 10),
         orderNumber: existing.orderNumber,
       };
     }
 
-    return adminCreateOrder({
+    const created = await adminCreateOrder({
       lineItems: data.items.map((item) => ({
         variantGid: item.variantId,
         quantity: item.quantity,
@@ -136,4 +138,38 @@ export const finalizeOrder = createServerFn()
       totalAmount: data.expectedAmountAed,
       paymentIntentId: data.paymentIntentId,
     });
+
+    // Send confirmation email here — this is the primary path that always runs
+    // in the browser. The webhook also tries as a fallback (for the rare case
+    // where the browser closes before finalizeOrder completes), but relies on
+    // correct webhook configuration. Sending here guarantees delivery regardless.
+    try {
+      const { sendOrderConfirmation } = await import("../server/email");
+      const { getDeliveryFee } = await import("./delivery");
+      await sendOrderConfirmation({
+        to: data.customer.email,
+        orderNumber: created.orderNumber,
+        customer: { firstName: data.customer.firstName, lastName: data.customer.lastName },
+        items: data.items.map((item) => ({
+          title: item.title ?? "Notebook",
+          quantity: item.quantity,
+          priceAed: item.price,
+        })),
+        address: {
+          line1: data.customer.address,
+          city: data.customer.city,
+          emirate: data.customer.emirate,
+        },
+        deliveryFeeAed: getDeliveryFee(data.customer.emirate),
+        totalAed: data.expectedAmountAed,
+      });
+      console.log(
+        `[finalizeOrder] Confirmation email sent to ${data.customer.email} for order #${created.orderNumber}`,
+      );
+    } catch (err) {
+      // Non-fatal — order exists, webhook will attempt email as fallback.
+      console.error(`[finalizeOrder] Email send failed for order #${created.orderNumber}:`, err);
+    }
+
+    return created;
   });

@@ -25,14 +25,11 @@ async function processWebhookOrder(
   const existing = await findOrderForPaymentIntent(paymentIntentId);
 
   if (existing) {
+    // Order was created by finalizeOrder (normal browser path), which also sent
+    // the confirmation email. Nothing to do here — skip to avoid duplicate email.
     console.log(
-      `[webhook] Order #${existing.orderNumber} already exists for PI: ${paymentIntentId} — skipping creation`,
+      `[webhook] Order #${existing.orderNumber} already exists for PI: ${paymentIntentId} — email sent by finalizeOrder, skipping`,
     );
-    // If the order already exists, finalizeOrder created it (or a previous delivery).
-    // finalizeOrder doesn't send emails, so we send one here to ensure delivery.
-    // On rare double-delivery (simultaneous), the customer may get two emails —
-    // acceptable given that waitUntil prevents retries in normal operation.
-    await sendConfirmationEmail(existing.orderNumber, customer, items, deliveryFeeAed, totalAmountAed);
     return;
   }
 
