@@ -122,7 +122,7 @@ export async function adminCreateOrder(params: {
       },
       email: customer.email,
       financial_status: "paid",
-      send_receipt: true,
+      send_receipt: false,
       transactions: [
         {
           kind: "sale",

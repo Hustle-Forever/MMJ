@@ -94,7 +94,7 @@ export const finalizeOrder = createServerFn()
     assertCustomer(data.customer);
 
     const { verifyPaymentIntent } = await import("../server/stripe");
-    const { adminCreateOrder } = await import("../server/shopify-admin");
+    const { findOrderForPaymentIntent, adminCreateOrder } = await import("../server/shopify-admin");
 
     // Stripe is the authority — verify status and amount server-side.
     const pi = await verifyPaymentIntent(data.paymentIntentId);
@@ -110,6 +110,20 @@ export const finalizeOrder = createServerFn()
       throw new Error(
         `Amount mismatch: charged ${pi.amount} fils, expected ${expectedFils}`,
       );
+    }
+
+    // Idempotency check: the Stripe webhook may have already created this order
+    // (webhook fires ~simultaneously with finalizeOrder; webhook often wins).
+    // Return the existing order rather than creating a duplicate.
+    const existing = await findOrderForPaymentIntent(data.paymentIntentId);
+    if (existing) {
+      console.log(
+        `[finalizeOrder] Order #${existing.orderNumber} already created by webhook for PI: ${data.paymentIntentId}`,
+      );
+      return {
+        id: parseInt(existing.shopifyOrderId.split("/").pop() ?? "0", 10),
+        orderNumber: existing.orderNumber,
+      };
     }
 
     return adminCreateOrder({

@@ -120,8 +120,12 @@ export default {
     }
 
     // Stripe webhook — must intercept before TanStack Start consumes the body.
+    // ctx is the execution context (Vercel Edge / Cloudflare Workers).
+    // waitUntil keeps the function alive after we return 200, so Stripe never
+    // times out and retries (the primary cause of duplicate orders).
     if (url.pathname === "/api/webhooks/stripe" && request.method === "POST") {
-      return handleStripeWebhook(request);
+      const execCtx = ctx as { waitUntil?: (p: Promise<void>) => void } | null;
+      return handleStripeWebhook(request, execCtx ?? undefined);
     }
 
     // Rate-limit checkout server-fn POSTs (initPaymentIntent, finalizeOrder, etc.)
