@@ -23,16 +23,33 @@ function getResend(): Resend {
 }
 
 export async function sendOrderConfirmation(data: OrderEmailData): Promise<void> {
-  const { error } = await getResend().emails.send({
-    from: "Curated by MMJ <orders@curatedbymmj.ae>",
-    to: [data.to],
-    subject: `Order confirmed · #${data.orderNumber}`,
-    html: buildEmailHtml(data),
-  });
+  const apiKey = process.env.RESEND_API_KEY ?? "";
+  console.log(
+    `[email] sendOrderConfirmation called — to: ${data.to} | from: orders@curatedbymmj.ae | RESEND_API_KEY length: ${apiKey.length}`,
+  );
 
-  if (error) {
-    throw new Error(`Resend API error: ${JSON.stringify(error)}`);
+  let result: { data: unknown; error: unknown };
+  try {
+    result = await getResend().emails.send({
+      from: "Curated by MMJ <orders@curatedbymmj.ae>",
+      to: [data.to],
+      subject: `Order confirmed · #${data.orderNumber}`,
+      html: buildEmailHtml(data),
+    });
+  } catch (err) {
+    const e = err as { message?: string; name?: string; response?: unknown };
+    console.error(
+      `[email] Resend SDK threw — name: ${e?.name} | message: ${e?.message} | response: ${JSON.stringify(e?.response ?? null)}`,
+    );
+    throw err;
   }
+
+  if (result.error) {
+    console.error(`[email] Resend API error — full object: ${JSON.stringify(result.error)}`);
+    throw new Error(`Resend API error: ${JSON.stringify(result.error)}`);
+  }
+
+  console.log(`[email] Resend accepted send — data: ${JSON.stringify(result.data)}`);
 }
 
 function esc(str: string): string {
