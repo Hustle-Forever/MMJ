@@ -196,23 +196,16 @@ export async function handleStripeWebhook(
   const totalAmountAed = Math.round(pi.amount / 100);
   const deliveryFeeAed = getDeliveryFee(customer.emirate);
 
-  // ── 6. Return 200 NOW — before any network calls ───────────────────────
-  // Stripe marks this event as successfully delivered and will NEVER retry.
-  // processWebhookOrder runs in background via waitUntil (or inline fallback).
-  const work = processWebhookOrder(pi.id, customer, items, totalAmountAed, deliveryFeeAed);
+  // ── 6. Process order + email, then return 200 ─────────────────────────
+  // We await the full work before returning so the email always completes.
+  // waitUntil is also registered when available (keeps the function alive
+  // on Edge runtimes), but we never rely on it alone — some Vercel Node.js
+  // deployments terminate background work before it finishes.
+  const work = processWebhookOrder(pi.id, customer, items, totalAmountAed, deliveryFeeAed)
+    .catch((err) => console.error("[webhook] Unhandled error for PI:", pi.id, err));
 
-  if (execCtx?.waitUntil) {
-    // Preferred: Vercel Edge / Cloudflare keeps the function alive after we return.
-    execCtx.waitUntil(
-      work.catch((err) => console.error("[webhook] Unhandled background error for PI:", pi.id, err)),
-    );
-  } else {
-    // Fallback for runtimes without waitUntil (Vercel Node.js serverless).
-    // We still return 200 after awaiting, which may take several seconds —
-    // but the other fixes (finalizeOrder idempotency, early validation) still
-    // reduce duplication risk significantly even on this path.
-    await work.catch((err) => console.error("[webhook] Unhandled error for PI:", pi.id, err));
-  }
+  execCtx?.waitUntil?.(work);
+  await work;
 
   return new Response("ok", { status: 200 });
 }
