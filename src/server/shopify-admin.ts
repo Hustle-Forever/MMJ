@@ -72,6 +72,54 @@ function gidToNumericId(gid: string): number {
   return parseInt(gid.split("/").pop() ?? "0", 10);
 }
 
+// Search Shopify customers by an arbitrary query string (email:x or phone:x).
+// Returns the numeric customer ID if found, null otherwise.
+// Non-throwing: search failures fall through so order creation can still proceed.
+async function searchCustomer(
+  query: string,
+  domain: string,
+  token: string,
+): Promise<number | null> {
+  const url = `https://${domain}/admin/api/2024-10/customers/search.json?query=${encodeURIComponent(query)}&limit=1`;
+  try {
+    const res = await fetch(url, { headers: { "X-Shopify-Access-Token": token } });
+    if (!res.ok) {
+      console.warn(`[shopify] Customer search (${query}) returned ${res.status}`);
+      return null;
+    }
+    const json = (await res.json()) as { customers: Array<{ id: number }> };
+    return json.customers[0]?.id ?? null;
+  } catch (err) {
+    console.warn("[shopify] Customer search threw:", err);
+    return null;
+  }
+}
+
+// Look up an existing Shopify customer by email first, then phone.
+// Returns the numeric customer ID if an existing record is found, else null.
+async function findExistingCustomer(
+  customer: AdminCustomer,
+  domain: string,
+  token: string,
+): Promise<number | null> {
+  // Email is the primary identifier — most reliable and always unique.
+  const byEmail = await searchCustomer(`email:${customer.email}`, domain, token);
+  if (byEmail !== null) {
+    console.log(`[shopify] Found existing customer by email (id=${byEmail})`);
+    return byEmail;
+  }
+  // Phone fallback: catches "phone already taken" 422s when the same customer
+  // re-orders with a slightly different email or Shopify deduped differently.
+  if (customer.phone) {
+    const byPhone = await searchCustomer(`phone:${customer.phone}`, domain, token);
+    if (byPhone !== null) {
+      console.log(`[shopify] Found existing customer by phone (id=${byPhone})`);
+      return byPhone;
+    }
+  }
+  return null;
+}
+
 export async function adminCreateOrder(params: {
   lineItems: LineItem[];
   customer: AdminCustomer;
@@ -86,6 +134,12 @@ export async function adminCreateOrder(params: {
 
   const { lineItems, customer, totalAmount, paymentIntentId } = params;
 
+  // Look up existing customer BEFORE creating the order.
+  // Attaching by ID avoids the "phone_number already taken" 422 that Shopify
+  // throws when the customer object includes a phone that belongs to an
+  // existing record. Repeat customers (same phone/email) are the normal case.
+  const existingCustomerId = await findExistingCustomer(customer, domain, token);
+
   const body = {
     order: {
       line_items: lineItems.map((item) => ({
@@ -93,12 +147,16 @@ export async function adminCreateOrder(params: {
         quantity: item.quantity,
         price: item.price.toFixed(2),
       })),
-      customer: {
-        first_name: customer.firstName,
-        last_name: customer.lastName,
-        email: customer.email,
-        phone: customer.phone,
-      },
+      // Existing customer: attach by ID only (no create attempt → no 422).
+      // New customer: include full details so Shopify creates the record.
+      customer: existingCustomerId !== null
+        ? { id: existingCustomerId }
+        : {
+            first_name: customer.firstName,
+            last_name: customer.lastName,
+            email: customer.email,
+            phone: customer.phone,
+          },
       shipping_address: {
         first_name: customer.firstName,
         last_name: customer.lastName,
