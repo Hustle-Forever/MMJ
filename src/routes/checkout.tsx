@@ -39,7 +39,12 @@ export const Route = createFileRoute("/checkout")({
       typeof s.redirect_status === "string" ? s.redirect_status : undefined,
   }),
   component: CheckoutPage,
-  head: () => ({ meta: [{ title: "Checkout · Curated by MMJ — Notebooks" }] }),
+  head: () => ({
+    meta: [
+      { title: "Checkout · Curated by MMJ" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });
 
 // ── Types ─────────────────────────────────────────────────────────────────────

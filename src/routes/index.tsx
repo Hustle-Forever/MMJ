@@ -16,18 +16,24 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Hand-bound hardcover notebooks in blush pink, ocean blue and sage green. Editorial paper goods, quietly expensive. Curated by MMJ.",
+          "Hand-bound hardcover notebooks in blush pink, ocean blue and sage green. Editorial paper goods, quietly expensive. Made in the UAE. Curated by MMJ.",
       },
-      { property: "og:title", content: "Curated by MMJ — Make it happen" },
+      { property: "og:title", content: "Curated by MMJ — Make it happen." },
       {
         property: "og:description",
         content:
-          "A trio of hand-bound hardcover notebooks. Cream paper, satin ribbon, made to be returned to.",
+          "A trio of hand-bound hardcover notebooks. Cream pages, satin ribbon, made to be returned to.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/" },
+      { property: "og:url", content: "https://curatedbymmj.ae/" },
+      { property: "og:image", content: "https://curatedbymmj.ae/logo/logo.png" },
+      { name: "twitter:title", content: "Curated by MMJ — Make it happen." },
+      {
+        name: "twitter:description",
+        content: "Hand-bound hardcover notebooks. Curated by MMJ.",
+      },
     ],
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: "https://curatedbymmj.ae/" }],
   }),
 });
 

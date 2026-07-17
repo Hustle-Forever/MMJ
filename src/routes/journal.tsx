@@ -4,7 +4,24 @@ import { useLenis } from "@/hooks/use-lenis";
 
 export const Route = createFileRoute("/journal")({
   component: JournalPage,
-  head: () => ({ meta: [{ title: "Journal · Curated by MMJ — Notebooks" }] }),
+  head: () => ({
+    meta: [
+      { title: "Journal · Curated by MMJ" },
+      {
+        name: "description",
+        content:
+          "Essays, rituals, and reasons to write by hand. Stories from the MMJ notebook world — coming soon.",
+      },
+      { property: "og:title", content: "Journal · Curated by MMJ" },
+      {
+        property: "og:description",
+        content: "Essays, rituals, and reasons to write by hand.",
+      },
+      { property: "og:url", content: "https://curatedbymmj.ae/journal" },
+      { property: "og:image", content: "https://curatedbymmj.ae/logo/logo.png" },
+    ],
+    links: [{ rel: "canonical", href: "https://curatedbymmj.ae/journal" }],
+  }),
 });
 
 function JournalPage() {

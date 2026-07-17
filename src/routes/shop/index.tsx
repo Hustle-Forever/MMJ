@@ -22,9 +22,27 @@ export const Route = createFileRoute("/shop/")({
   component: ShopPage,
   head: () => ({
     meta: [
-      { title: "Shop · Curated by MMJ — Notebooks" },
-      { name: "description", content: "Shop the Curated by MMJ notebook collection." },
+      { title: "Shop The Collection · Curated by MMJ" },
+      {
+        name: "description",
+        content:
+          "Shop the Curated by MMJ notebook collection — blush pink, ocean blue and sage green hardcover notebooks with cream pages and satin ribbon. Free shipping in the UAE.",
+      },
+      { property: "og:title", content: "The Collection · Curated by MMJ" },
+      {
+        property: "og:description",
+        content:
+          "Hardcover notebooks made to be returned to. Cream pages, satin ribbon, three colours. Shop the full MMJ collection.",
+      },
+      { property: "og:url", content: "https://curatedbymmj.ae/shop" },
+      { property: "og:image", content: "https://curatedbymmj.ae/logo/logo.png" },
+      { name: "twitter:title", content: "The Collection · Curated by MMJ" },
+      {
+        name: "twitter:description",
+        content: "Hardcover notebooks in three colours. Shop Curated by MMJ.",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://curatedbymmj.ae/shop" }],
   }),
 });
 

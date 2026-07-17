@@ -59,9 +59,65 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+const SITE_ORIGIN = "https://curatedbymmj.ae";
+
+async function generateSitemap(): Promise<Response> {
+  // Try to fetch live product handles from Shopify; fall back to known handles.
+  let productHandles = ["blush-pink", "ocean-blue", "sage-green"];
+  try {
+    const { shopifyFetch } = await import("./server/shopify");
+    const data = await shopifyFetch<{
+      products: { edges: Array<{ node: { handle: string } }> };
+    }>("{ products(first: 50) { edges { node { handle } } } }");
+    const live = data.products.edges.map((e) => e.node.handle);
+    if (live.length > 0) productHandles = live;
+  } catch (err) {
+    console.error("[sitemap] Shopify fetch failed — using fallback handles:", err);
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const pages = [
+    { path: "/",        priority: "1.0", changefreq: "weekly" },
+    { path: "/shop",    priority: "0.9", changefreq: "weekly" },
+    { path: "/journal", priority: "0.5", changefreq: "monthly" },
+    ...productHandles.map((h) => ({
+      path: `/shop/${h}`,
+      priority: "0.8",
+      changefreq: "monthly",
+    })),
+  ];
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pages
+  .map(
+    (p) => `  <url>
+    <loc>${SITE_ORIGIN}${p.path}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>${p.changefreq}</changefreq>
+    <priority>${p.priority}</priority>
+  </url>`,
+  )
+  .join("\n")}
+</urlset>`;
+
+  return new Response(xml, {
+    headers: {
+      "Content-Type": "application/xml; charset=utf-8",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const url = new URL(request.url);
+
+    // Sitemap — dynamic, includes live Shopify product handles.
+    if (url.pathname === "/sitemap.xml") {
+      return generateSitemap();
+    }
 
     // Stripe webhook — must intercept before TanStack Start consumes the body.
     if (url.pathname === "/api/webhooks/stripe" && request.method === "POST") {

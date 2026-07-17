@@ -26,11 +26,36 @@ export const Route = createFileRoute("/shop/$handle")({
   component: ProductPage,
   head: ({ loaderData }) => {
     const p = loaderData as Product | null;
+    const ogImage =
+      p?.shopifyImages[0]?.url ?? "https://curatedbymmj.ae/logo/logo.png";
+    const description = p?.description
+      ? `${p.description} Shop ${p.title} at Curated by MMJ.`
+      : `${p?.title ?? "Notebook"} — hand-bound hardcover notebook by Curated by MMJ.`;
     return {
       meta: [
-        { title: `${p?.title ?? "Product"} · Curated by MMJ — Notebooks` },
-        { name: "description", content: p?.description || undefined },
+        { title: `${p?.title ?? "Notebook"} · Curated by MMJ` },
+        { name: "description", content: description },
+        { property: "og:type", content: "product" },
+        { property: "og:title", content: `${p?.title ?? "Notebook"} · Curated by MMJ` },
+        { property: "og:description", content: description },
+        {
+          property: "og:url",
+          content: `https://curatedbymmj.ae/shop/${p?.handle ?? ""}`,
+        },
+        { property: "og:image", content: ogImage },
+        ...(p?.price !== null && p?.price !== undefined
+          ? [
+              { property: "product:price:amount", content: String(p.price) },
+              { property: "product:price:currency", content: "AED" },
+            ]
+          : []),
+        { name: "twitter:title", content: `${p?.title ?? "Notebook"} · Curated by MMJ` },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: ogImage },
       ],
+      links: p
+        ? [{ rel: "canonical", href: `https://curatedbymmj.ae/shop/${p.handle}` }]
+        : [],
     };
   },
 });
@@ -91,6 +116,27 @@ function ProductPage() {
   const isSoldOut = variant !== undefined && !variant.available;
   const hasGallery = product.shopifyImages.length > 0;
 
+  const schemaJson = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: product.description || undefined,
+    image:
+      product.shopifyImages[0]?.url ??
+      `https://curatedbymmj.ae/shop/${product.handle}`,
+    brand: { "@type": "Brand", name: "Curated by MMJ" },
+    offers: {
+      "@type": "Offer",
+      priceCurrency: "AED",
+      ...(displayPrice !== null ? { price: displayPrice } : {}),
+      availability: isSoldOut
+        ? "https://schema.org/OutOfStock"
+        : "https://schema.org/InStock",
+      url: `https://curatedbymmj.ae/shop/${product.handle}`,
+      seller: { "@type": "Organization", name: "Curated by MMJ" },
+    },
+  }).replace(/<\//g, "<\\/");
+
   const handleAdd = () => {
     addItem(product, variantId || (variant?.id ?? ""), qty);
     setAdded(true);
@@ -98,9 +144,14 @@ function ProductPage() {
   };
 
   return (
-    <main className="min-h-screen bg-blush text-blue">
-      <Nav />
-      <div className="mx-auto max-w-[1400px] px-6 pt-32 pb-24 md:px-10">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: schemaJson }}
+      />
+      <main className="min-h-screen bg-blush text-blue">
+        <Nav />
+        <div className="mx-auto max-w-[1400px] px-6 pt-32 pb-24 md:px-10">
         <Link
           to="/shop"
           className="mb-12 inline-flex items-center gap-2 text-caption uppercase tracking-caps text-blue/40 transition hover:text-blue"
@@ -282,5 +333,6 @@ function ProductPage() {
       </div>
       <Footer />
     </main>
+    </>
   );
 }

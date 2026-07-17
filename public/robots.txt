@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /checkout
+Disallow: /account
+
+Sitemap: https://curatedbymmj.ae/sitemap.xml
