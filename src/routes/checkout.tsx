@@ -626,6 +626,11 @@ function CheckoutForm({
                       <span className="inline-block h-2.5 w-2.5 animate-spin rounded-full border border-blue/30 border-t-blue" />
                       Locating…
                     </>
+                  ) : geoState.status === "error" ? (
+                    <>
+                      <MapPin className="h-3 w-3" aria-hidden />
+                      Try again
+                    </>
                   ) : (
                     <>
                       <MapPin className="h-3 w-3" aria-hidden />
@@ -647,7 +652,9 @@ function CheckoutForm({
               <p className="mt-1 text-[11px] text-red-500">{fieldErrors.address}</p>
             )}
             {geoState.status === "error" && (
-              <p className="mt-1 text-[11px] text-blue/40">{geoState.message}</p>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-blue/60">
+                {geoState.message}
+              </p>
             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
