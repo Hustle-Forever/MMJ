@@ -277,6 +277,13 @@ Design pass on the homepage only (no checkout/Shopify/Stripe changes).
 
 **Hero pop-in fix (2026-07-20)**: the flat fallback cover rendered at 100% of the stage height while the 3D book fills only ~80.5% (`NB.H / (2·(6−D/2)·tan(fov/2))` at camera z=6, fov=34), so the crossfade visibly snapped the book smaller on first load. The flat cover now renders at 80.5% so the first painted frame matches the 3D book's final size.
 
+**Shop grid redesign (2026-07-20)** — `src/routes/shop/index.tsx`, matching the Still Life editorial direction:
+- Killed the per-product tinted panel and the colored label bar (it duplicated the title).
+- Product photos now sit on a clean white surface with a quiet `№ 01` index marker.
+- Editorial caption under a hairline rule: display name, tabular price, the per-colourway script mood line, and an underline "Shop →" (the filled pill stays hero-only).
+- Hover flips the notebook to its **back cover** (bundled `cover_*_back.webp`, imported directly — not via `three/Notebook`, which would pull three.js into the route bundle). Unknown Shopify products fall back to their second CDN image, or a plain scale if none.
+- Cards step down across the row (`lg:mt-16` / `lg:mt-32` by column) — a salon-wall rhythm instead of three identical boxes.
+
 ---
 
 ## Lessons Learned

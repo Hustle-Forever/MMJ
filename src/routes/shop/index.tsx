@@ -1,10 +1,22 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 import { useLenis } from "@/hooks/use-lenis";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/sections/Footer";
 import { products as fallback, mapShopifyProduct, type Product } from "@/lib/products";
 import { fetchProducts } from "@/lib/shopify-fns";
+
+// Back covers imported directly as assets (NOT via three/Notebook — that
+// would pull three.js into this route's bundle). Hovering a card flips the
+// notebook over.
+import backPink from "@/assets/covers/cover_pink_back.webp";
+import backBlue from "@/assets/covers/cover_blue_back.webp";
+import backGreen from "@/assets/covers/cover_green_back.webp";
+
+const BACK_COVERS: Record<string, string> = {
+  "blush-pink": backPink,
+  "ocean-blue": backBlue,
+  "sage-green": backGreen,
+};
 
 export const Route = createFileRoute("/shop/")({
   loader: async () => {
@@ -46,71 +58,68 @@ export const Route = createFileRoute("/shop/")({
   }),
 });
 
-function ProductCard({ product: p }: { product: Product }) {
-  const [hovered, setHovered] = useState(false);
+/**
+ * Editorial product card — matches the Still Life direction.
+ * The photo sits on a clean white surface (no tinted panel, no label bar);
+ * the caption below is a hairline-ruled editorial entry: № index, display
+ * name, script mood line, price. Hover flips the notebook to its back cover
+ * (a real asset this page never used) and slides the underline CTA arrow.
+ */
+function ProductCard({ product: p, index }: { product: Product; index: number }) {
+  const back = BACK_COVERS[p.handle] ?? p.shopifyImages[1]?.url;
   return (
-    <Link
-      to="/shop/$handle"
-      params={{ handle: p.handle }}
-      className="group block"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      <div
-        className="relative overflow-hidden rounded-3xl"
-        style={{
-          background: `color-mix(in oklab, ${p.hex} 14%, var(--blush))`,
-          transition: "box-shadow 400ms cubic-bezier(0.16,1,0.3,1), transform 400ms cubic-bezier(0.16,1,0.3,1)",
-          boxShadow: hovered
-            ? "0 32px 64px -16px rgba(11,95,165,0.20)"
-            : "0 4px 20px rgba(11,95,165,0.06)",
-          transform: hovered ? "translateY(-6px)" : "translateY(0)",
-        }}
-      >
-        <div className="flex aspect-[3/4] items-center justify-center px-10 pt-16 pb-16">
-          <img
-            src={p.image}
-            alt={`${p.title} notebook`}
-            className="h-full w-auto max-w-full object-contain"
-            draggable={false}
-            style={{
-              filter: "drop-shadow(0 24px 32px rgba(11,95,165,0.16))",
-              transition: "transform 600ms cubic-bezier(0.16,1,0.3,1)",
-              transform: hovered ? "scale(1.05) translateY(-4px)" : "scale(1) translateY(0)",
-            }}
-          />
-        </div>
+    <Link to="/shop/$handle" params={{ handle: p.handle }} className="group block">
+      {/* Clean white stage */}
+      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-white shadow-card transition-shadow duration-500 ease-soft group-hover:shadow-lift">
+        {/* № index — quiet editorial marker */}
+        <span className="absolute left-5 top-5 z-10 text-[11px] uppercase tracking-[0.3em] text-blue/35">
+          № {String(index + 1).padStart(2, "0")}
+        </span>
 
-        <div
-          className="absolute inset-x-0 bottom-0 h-14 overflow-hidden"
-          style={{ background: `color-mix(in oklab, ${p.hex} 22%, var(--white))` }}
-        >
-          <span
-            className="absolute inset-0 flex items-center justify-center text-caption uppercase tracking-caps text-blue"
-            style={{
-              transform: hovered ? "translateY(0)" : "translateY(100%)",
-              transition: "transform 350ms cubic-bezier(0.16,1,0.3,1)",
-            }}
-          >
-            Shop →
-          </span>
-          <span
-            className="absolute inset-0 flex items-center justify-center text-caption uppercase tracking-caps text-blue/50"
-            style={{
-              transform: hovered ? "translateY(-100%)" : "translateY(0)",
-              transition: "transform 350ms cubic-bezier(0.16,1,0.3,1)",
-            }}
-          >
-            {p.colorLabel}
-          </span>
-        </div>
+        {/* Front cover — fades out on hover when a back exists (both photos
+            have transparent backgrounds, so they must not overlap) */}
+        <img
+          src={p.image}
+          alt={`${p.title} notebook`}
+          draggable={false}
+          className={`absolute inset-0 m-auto h-[78%] w-auto max-w-[80%] object-contain transition-all duration-700 ease-soft group-hover:scale-[1.02] ${back ? "group-hover:opacity-0" : ""}`}
+          style={{ filter: "drop-shadow(0 20px 28px rgba(11,95,165,0.14))" }}
+        />
+        {/* Back cover — revealed on hover (the flip) */}
+        {back && (
+          <img
+            src={back}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="absolute inset-0 m-auto h-[78%] w-auto max-w-[80%] object-contain opacity-0 transition-all duration-700 ease-soft group-hover:scale-[1.02] group-hover:opacity-100"
+            style={{ filter: "drop-shadow(0 20px 28px rgba(11,95,165,0.14))" }}
+          />
+        )}
       </div>
 
-      <div className="mt-5 px-1">
-        <p className="font-display text-h3 text-blue">{p.title}</p>
-        <p className="mt-1 text-caption text-blue/50">
-          {p.price !== null ? `AED ${p.price}` : "—"}
-        </p>
+      {/* Editorial caption — hairline rule, like the Showcase spec list */}
+      <div className="mt-5 border-t border-blue/15 pt-4">
+        <div className="flex items-baseline justify-between gap-4">
+          <p className="font-display text-[1.4rem] leading-tight text-blue">{p.name}</p>
+          <p
+            className="shrink-0 text-caption text-blue/60"
+            style={{ fontVariantNumeric: "tabular-nums lining-nums" }}
+          >
+            {p.price !== null ? `AED ${p.price}` : "—"}
+          </p>
+        </div>
+        {p.mood && (
+          <p className="font-script mt-1 text-[1.1rem] italic leading-snug text-blue/45">{p.mood}</p>
+        )}
+        <span className="mt-3 inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-blue/50 transition-colors duration-300 group-hover:text-blue">
+          <span className="border-b border-transparent pb-px transition-colors duration-300 group-hover:border-blue/40">
+            Shop
+          </span>
+          <span aria-hidden className="transition-transform duration-300 ease-soft group-hover:translate-x-1">
+            →
+          </span>
+        </span>
       </div>
     </Link>
   );
@@ -133,9 +142,13 @@ function ShopPage() {
           </p>
         </header>
 
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {displayProducts.map((p) => (
-            <ProductCard key={p.handle} product={p} />
+        {/* Staggered gallery rhythm — cards step down across the row like a
+            hung salon wall, instead of three identical boxes on a rail */}
+        <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-20">
+          {displayProducts.map((p, i) => (
+            <div key={p.handle} className={i % 3 === 1 ? "lg:mt-16" : i % 3 === 2 ? "lg:mt-32" : ""}>
+              <ProductCard product={p} index={i} />
+            </div>
           ))}
         </div>
       </div>
