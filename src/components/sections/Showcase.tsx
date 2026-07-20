@@ -129,13 +129,19 @@ export function Showcase() {
       style={{ height: "340vh" }}
       aria-label="Signature showcase"
     >
-      <div className="sticky top-0 flex h-[100dvh] w-full items-center overflow-hidden">
+      {/* White chapter surface — separates the collection from the blush hero */}
+      <div className="sticky top-0 flex h-[100dvh] w-full items-center overflow-hidden bg-white">
         <div className="relative z-10 grid h-full w-full grid-cols-1 content-center items-center gap-4 px-6 md:grid-cols-12 md:gap-8 md:px-16">
           {/* Left copy — heading + CTA morph color with the book.
               Mobile: text stacks above the book and everything must fit one
               viewport, so type tightens and the specs move to md+ only. */}
           <div ref={copyRef} className="md:col-span-4" style={{ ["--morph" as string]: "rgb(11 95 165)" }}>
-            <p className="mb-2 text-caption uppercase tracking-caps text-blue/60 md:mb-4">The Collection</p>
+            <p className="mb-2 flex items-baseline gap-3 text-caption uppercase tracking-caps text-blue/60 md:mb-4">
+              The Collection
+              <span className="text-[11px] tracking-[0.18em] text-blue/40" style={{ fontVariantNumeric: "tabular-nums lining-nums" }}>
+                {String(activeIndex + 1).padStart(2, "0")} — 03
+              </span>
+            </p>
             <h2
               key={active.slug}
               className="font-display leading-[0.9]"
@@ -149,10 +155,18 @@ export function Showcase() {
             </h2>
             <p
               key={`${active.slug}-d`}
-              className="mt-3 max-w-md text-pretty text-sm leading-[1.6] text-blue/75 md:mt-6 md:text-base md:leading-[1.7]"
+              className="mt-3 max-w-md text-pretty text-sm leading-[1.6] text-blue/75 md:mt-6 md:text-[17px] md:leading-[1.7]"
               style={{ animation: "mask-up 1100ms cubic-bezier(0.16,1,0.3,1) 100ms both" }}
             >
               {active.description}
+            </p>
+            {/* Mood line — the editorial one-liner each colourway carries */}
+            <p
+              key={`${active.slug}-m`}
+              className="font-script mt-3 hidden text-[1.35rem] italic leading-snug text-blue/55 md:block"
+              style={{ animation: "mask-up 1100ms cubic-bezier(0.16,1,0.3,1) 180ms both" }}
+            >
+              {active.mood}
             </p>
             <dl
               key={`${active.slug}-s`}
@@ -165,12 +179,16 @@ export function Showcase() {
                 </div>
               ))}
             </dl>
+            {/* Secondary action — underline treatment. The filled pill belongs
+                to the hero's single primary CTA only. */}
             <button
-              className="mt-4 inline-flex min-h-11 items-center gap-3 rounded-full px-7 text-caption uppercase tracking-caps text-white transition-opacity ease-soft duration-(--duration-micro) hover:opacity-90 md:mt-8"
-              style={{ background: "var(--morph)" }}
+              className="group mt-4 inline-flex min-h-11 items-center gap-3 text-caption uppercase tracking-caps transition-opacity ease-soft duration-(--duration-micro) hover:opacity-80 md:mt-6"
+              style={{ color: "var(--morph)" }}
             >
-              Shop {active.name}
-              <span aria-hidden>→</span>
+              <span className="border-b border-current/40 pb-1 transition-colors group-hover:border-current">
+                Shop {active.name}
+              </span>
+              <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
             </button>
           </div>
 

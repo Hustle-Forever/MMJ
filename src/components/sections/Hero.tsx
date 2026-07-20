@@ -54,7 +54,7 @@ export function Hero() {
       <Section
         as="section"
         rhythm="none"
-        className="relative isolate flex min-h-[100svh] flex-col items-center justify-center overflow-hidden pt-28 pb-16 text-center md:pt-32"
+        className="relative isolate flex min-h-[100svh] flex-col items-center justify-center overflow-hidden pt-24 pb-10 text-center"
       >
         <motion.div variants={bg} initial="hidden" animate="visible">
           <HeroBackground />
@@ -74,7 +74,7 @@ export function Hero() {
           {/* Headline — the bold moment, revealed line by line */}
           <h1
             className="font-display mt-6 text-balance leading-[var(--leading-display)]"
-            style={{ fontSize: "clamp(3rem, 8.5vw, 6.5rem)" }}
+            style={{ fontSize: "clamp(3.5rem, 8.5vw, 5.75rem)" }}
           >
             <span className="block overflow-hidden pb-[0.06em]">
               <motion.span
@@ -122,13 +122,13 @@ export function Hero() {
             variants={book}
             initial="hidden"
             animate="visible"
-            className="relative mt-10 flex flex-col items-center"
+            className="relative mt-6 flex flex-col items-center md:mt-8"
           >
             <HeroNotebook color="pink" />
           </motion.div>
 
           {/* Single calm CTA */}
-          <motion.div variants={fadeUp(1.2)} initial="hidden" animate="visible" className="mt-10">
+          <motion.div variants={fadeUp(1.2)} initial="hidden" animate="visible" className="mt-8">
             <Button asChild variant="primary" size="pill">
               <Link to="/shop">Shop the collection</Link>
             </Button>

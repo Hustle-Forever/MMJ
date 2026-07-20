@@ -79,7 +79,7 @@ export function Film() {
             Curated by MMJ · The Film
           </p>
           <h3 className="font-display text-[9vw] leading-[0.95] text-blue md:text-[4vw]">
-            Make it happen.
+            The first page is <span className="font-script italic">yours.</span>
           </h3>
         </div>
 

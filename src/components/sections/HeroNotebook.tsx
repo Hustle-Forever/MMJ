@@ -112,8 +112,8 @@ export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
         style={{
           // Capped by viewport height too, so headline + book + CTA all fit
           // above the fold on short desktop viewports (e.g. 1440×900).
-          height: "clamp(220px, min(54vw, 52vh), 520px)",
-          width: "min(72vw, clamp(200px, min(46vw, 46vh), 480px))",
+          height: "clamp(220px, min(54vw, 44vh), 460px)",
+          width: "min(72vw, clamp(200px, min(46vw, 40vh), 430px))",
         }}
       >
         {/* Always-present flat book — hidden only once the 3D book is confirmed. */}

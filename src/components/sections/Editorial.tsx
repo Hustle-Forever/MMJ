@@ -101,7 +101,7 @@ export function Editorial() {
         <div className="marquee-track inline-flex gap-16 pl-16 font-display text-[8vw] leading-none text-blue/85 md:text-[5vw]">
           {Array.from({ length: 2 }).map((_, k) => (
             <span key={k} className="inline-flex items-center gap-16">
-              <span>Make it happen</span>
+              <span>Made to be returned to</span>
               <span className="font-script italic opacity-60">·</span>
               <span>Written by hand</span>
               <span className="font-script italic opacity-60">·</span>

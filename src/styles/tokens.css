@@ -26,6 +26,10 @@
   --white: #ffffff;
   --footer-pink: #efc9d4;
   --ink: var(--blue); /* all text ink — never black */
+  /* Deep shade of the locked blue hue — the page's single dark chapter
+     (Still Life section only). Not a new pigment: same hue family as --blue.
+     Contrast: blush on navy 12.9:1 (AAA). */
+  --navy: #092c49;
 
   /* Derived tints — mixes of locked hues only, no new pigments */
   --ink-70: color-mix(in oklab, var(--ink) 70%, transparent);
@@ -167,6 +171,7 @@
   --color-blue: var(--blue);
   --color-ink: var(--ink);
   --color-footer-pink: var(--footer-pink);
+  --color-navy: var(--navy);
   --color-blush-veil: var(--blush-veil);
   --color-blush-glass: var(--blush-glass);
 

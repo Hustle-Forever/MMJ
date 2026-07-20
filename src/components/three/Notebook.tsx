@@ -93,10 +93,14 @@ export function NotebookBody({
   color = "pink",
   shellRef,
   ribbonRef,
+  showRibbon = true,
 }: {
   color?: NotebookColor;
   shellRef?: (m: THREE.MeshPhysicalMaterial | null) => void;
   ribbonRef?: (m: THREE.MeshPhysicalMaterial | null) => void;
+  /** The still life lays books flat — its hanging tail would float sideways,
+      so pooled floor ribbons replace it there. */
+  showRibbon?: boolean;
 }) {
   const cw = COLORWAYS[color];
   return (
@@ -124,7 +128,7 @@ export function NotebookBody({
 
       {/* Satin ribbon bookmark — tail emerging from the pages at the bottom,
           like the product photos (top of the strip is hidden inside the body) */}
-      <mesh position={[0.55, -H / 2 - 0.14, 0]} rotation={[0, 0, -0.055]}>
+      <mesh visible={showRibbon} position={[0.55, -H / 2 - 0.14, 0]} rotation={[0, 0, -0.055]}>
         <boxGeometry args={[0.09, 0.85, 0.014]} />
         <meshPhysicalMaterial
           ref={ribbonRef}

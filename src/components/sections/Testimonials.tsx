@@ -21,7 +21,7 @@ const notes = [
 
 export function Testimonials() {
   return (
-    <section className="relative overflow-hidden py-24 md:py-32">
+    <section className="relative overflow-hidden bg-blush-2 py-24 md:py-32">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <p className="mb-4 text-[11px] uppercase tracking-[0.4em] text-blue/60">
           From the desk of

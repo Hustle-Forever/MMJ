@@ -3,6 +3,7 @@ import { useLenis } from "@/hooks/use-lenis";
 import { Nav } from "@/components/Nav";
 import { Hero } from "@/components/sections/Hero";
 import { Showcase } from "@/components/sections/Showcase";
+import { StillLife } from "@/components/sections/StillLife";
 import { Editorial } from "@/components/sections/Editorial";
 import { Film } from "@/components/sections/Film";
 import { Testimonials } from "@/components/sections/Testimonials";
@@ -44,6 +45,7 @@ function Home() {
       <Nav />
       <Hero />
       <Showcase />
+      <StillLife />
       <Editorial />
       <Film />
       <Testimonials />

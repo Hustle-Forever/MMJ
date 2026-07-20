@@ -219,9 +219,28 @@ vercel env add STRIPE_WEBHOOK_SECRET
 vercel --prod
 ```
 
-The `vite.config.ts` already has `preset: "vercel"` configured in the Nitro options. No `vercel.json` is needed.
+The `vite.config.ts` already has `preset: "vercel"` configured in the Nitro options. A `vercel.json` is present to set headers for `/.well-known/` (required for Apple Pay domain verification).
 
-### 4. Verify after deploy
+### 4. Apple Pay domain verification (Stripe)
+
+Apple Pay requires `/.well-known/apple-developer-merchantid-domain-association` to be served as a plain-text file from your domain.
+
+1. In Stripe Dashboard → Settings → Payment methods → Apple Pay → Domains → Add domain
+2. Stripe will show you the file contents — paste them into `public/.well-known/apple-developer-merchantid-domain-association`
+3. Deploy, then verify:
+
+```bash
+# Must return 200 with Content-Type: text/plain and the file body (not an HTML 404)
+curl -I https://curatedbymmj.ae/.well-known/apple-developer-merchantid-domain-association
+# Expected: HTTP/2 200  /  content-type: text/plain
+
+curl https://curatedbymmj.ae/.well-known/apple-developer-merchantid-domain-association
+# Expected: the raw domain association file content (starts with {"sslcertificate":...)
+```
+
+**Why this works:** Nitro's Vercel preset generates `.vercel/output/config.json` with a `handle: filesystem` rule before the SSR catch-all. Files in `public/` are copied to `.vercel/output/static/` at build time and served as static assets. The `vercel.json` `headers` rule forces `Content-Type: text/plain` on all `/.well-known/` paths.
+
+### 5. Verify after deploy
 
 ```bash
 # Confirm Storefront token works:
@@ -233,6 +252,28 @@ curl -X POST https://yourstore.myshopify.com/api/2024-10/graphql.json \
 
 # Confirm webhook is reachable — send a test event from Stripe Dashboard
 ```
+
+---
+
+## Homepage Redesign — The Still Life (2026-07-20)
+
+Design pass on the homepage only (no checkout/Shopify/Stripe changes).
+
+**New: The Still Life section** (`src/components/sections/StillLife.tsx` + `src/components/three/StillLifeScene.tsx`)
+- The page's single dark chapter — `--navy` (#092c49), a deep shade of the locked brand blue, between Showcase and Editorial.
+- Three notebooks composed like a luxury product photograph: blush + sage lying stacked, ocean leaning behind, satin ribbons pooling on the set floor.
+- Material realism: procedural env map (drei Lightformers — no network HDR), linen-weave bump map (procedural canvas), roughness 0.65, warm raking strip light producing a readable specular along the covers, baked `ContactShadows` (frames=1).
+- `frameloop="demand"` — the idle scene renders zero frames; hover tilt (desktop only) invalidates frames only while settling.
+- Mobile (and no-WebGL/reduced-motion) gets a static fanned-covers composition — no canvas, no cost. Desktop ≥768px with WebGL gets the live set.
+
+**Fixes from the design audit**
+- Section surface contrast: Showcase now sits on white, Still Life on navy, Testimonials on blush-2 — the page reads as chapters instead of wall-to-wall blush.
+- Hero completes at 1440×900: tighter rhythm, headline capped at 5.75rem, stage capped at 44vh — eyebrow, headline, book and CTA all above the fold. Mobile headline floor raised to 3.5rem.
+- Showcase hierarchy: collection counter (01—03), the previously unused per-colourway `mood` line in script, larger description, less dead space.
+- Button hierarchy: the filled pill is now reserved for the hero's single primary CTA; Showcase and Still Life actions use an underline treatment.
+- Copy: "Make it happen." now appears only in the hero. Film header became "The first page is yours."; the marquee slot became "Made to be returned to".
+
+**3D API change**: `NotebookBody` accepts `showRibbon?: boolean` (default `true`) — the still life hides the hanging tail (it would float sideways on lying books) and uses pooled floor ribbons instead.
 
 ---
 
