@@ -275,6 +275,8 @@ Design pass on the homepage only (no checkout/Shopify/Stripe changes).
 
 **3D API change**: `NotebookBody` accepts `showRibbon?: boolean` (default `true`) — the still life hides the hanging tail (it would float sideways on lying books) and uses pooled floor ribbons instead.
 
+**Hero pop-in fix (2026-07-20)**: the flat fallback cover rendered at 100% of the stage height while the 3D book fills only ~80.5% (`NB.H / (2·(6−D/2)·tan(fov/2))` at camera z=6, fov=34), so the crossfade visibly snapped the book smaller on first load. The flat cover now renders at 80.5% so the first painted frame matches the 3D book's final size.
+
 ---
 
 ## Lessons Learned

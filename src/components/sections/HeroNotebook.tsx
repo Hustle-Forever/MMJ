@@ -28,18 +28,27 @@ class CanvasErrorBoundary extends Component<
 }
 
 /** Flat cover — bundled asset (served from /assets, unlike public/textures which
- * 404s on Vercel). This is the guaranteed-visible book. */
+ * 404s on Vercel). This is the guaranteed-visible book.
+ *
+ * Height is 80.5% of the stage, NOT 100%: the 3D book's shell fills only
+ * NB.H / (2·(6−D/2)·tan(fov/2)) = 2.9/3.602 ≈ 0.805 of the canvas
+ * (camera z=6, fov=34). Matching that here means the first painted frame is
+ * already the final size — no snap when the 3D book crossfades in. (The
+ * value is hardcoded rather than derived from NB because importing
+ * three/Notebook here would pull three.js into the initial bundle.) */
 function FlatCover() {
   return (
-    <img
-      src={coverPink}
-      alt="Curated by MMJ — Blush Pink hardcover notebook"
-      draggable={false}
-      className="h-full w-auto rounded-md object-contain [animation:notebook-float_7s_ease-in-out_infinite]"
-      style={{
-        filter: "drop-shadow(0 22px 26px color-mix(in oklab, var(--blue) 12%, transparent))",
-      }}
-    />
+    <div className="flex h-[80.5%] items-center justify-center">
+      <img
+        src={coverPink}
+        alt="Curated by MMJ — Blush Pink hardcover notebook"
+        draggable={false}
+        className="h-full w-auto rounded-md object-contain [animation:notebook-float_7s_ease-in-out_infinite]"
+        style={{
+          filter: "drop-shadow(0 22px 26px color-mix(in oklab, var(--blue) 12%, transparent))",
+        }}
+      />
+    </div>
   );
 }
 
