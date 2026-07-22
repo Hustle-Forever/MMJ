@@ -49,7 +49,7 @@ const META: Record<
     image: coverPink,
     mood: "Desk, laptop, gold pen — quiet ambition.",
     specs: [
-      { label: "Paper", value: "120gsm cream, ink-proof" },
+      { label: "Paper", value: "100gsm cream" },
       { label: "Cover", value: "Hardcover linen, striped" },
       { label: "Ribbon", value: "Blush satin bookmark" },
       { label: "Weight", value: "420g · A5" },
@@ -64,7 +64,7 @@ const META: Record<
     image: coverBlue,
     mood: "Soft white linen, morning light.",
     specs: [
-      { label: "Paper", value: "120gsm cream, ink-proof" },
+      { label: "Paper", value: "100gsm cream" },
       { label: "Cover", value: "Hardcover linen, striped" },
       { label: "Ribbon", value: "Sky-blue satin bookmark" },
       { label: "Weight", value: "420g · A5" },
@@ -79,7 +79,7 @@ const META: Record<
     image: coverGreen,
     mood: "Warm marble, sheer curtain light.",
     specs: [
-      { label: "Paper", value: "120gsm cream, ink-proof" },
+      { label: "Paper", value: "100gsm cream" },
       { label: "Cover", value: "Hardcover linen, striped" },
       { label: "Ribbon", value: "Sage satin bookmark" },
       { label: "Weight", value: "420g · A5" },
@@ -173,7 +173,7 @@ export const products: Product[] = [
     description: "",
     mood: "Desk, laptop, gold pen — quiet ambition.",
     specs: [
-      { label: "Paper", value: "120gsm cream, ink-proof" },
+      { label: "Paper", value: "100gsm cream" },
       { label: "Cover", value: "Hardcover linen, striped" },
       { label: "Ribbon", value: "Blush satin bookmark" },
       { label: "Weight", value: "420g · A5" },
@@ -197,7 +197,7 @@ export const products: Product[] = [
     description: "",
     mood: "Soft white linen, morning light.",
     specs: [
-      { label: "Paper", value: "120gsm cream, ink-proof" },
+      { label: "Paper", value: "100gsm cream" },
       { label: "Cover", value: "Hardcover linen, striped" },
       { label: "Ribbon", value: "Sky-blue satin bookmark" },
       { label: "Weight", value: "420g · A5" },
@@ -221,7 +221,7 @@ export const products: Product[] = [
     description: "",
     mood: "Warm marble, sheer curtain light.",
     specs: [
-      { label: "Paper", value: "120gsm cream, ink-proof" },
+      { label: "Paper", value: "100gsm cream" },
       { label: "Cover", value: "Hardcover linen, striped" },
       { label: "Ribbon", value: "Sage satin bookmark" },
       { label: "Weight", value: "420g · A5" },

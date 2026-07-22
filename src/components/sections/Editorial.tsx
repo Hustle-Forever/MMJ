@@ -78,9 +78,9 @@ export function Editorial() {
             animate={inView ? "visible" : "hidden"}
             className="text-pretty text-[16px] leading-[1.75] text-blue/75 md:col-span-5 md:col-start-2"
           >
-            Every notebook is bound by hand. Cream 120gsm pages take fountain
-            ink without bleeding, a satin ribbon marks your place, and a
-            quiet script on the cover reminds you why you started.
+            Every notebook is bound by hand. Cream 100gsm pages, a satin
+            ribbon to mark your place, and a quiet script on the cover that
+            reminds you why you started.
           </motion.p>
           <motion.p
             custom={0.58}
