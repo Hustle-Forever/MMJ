@@ -1,22 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { MotionConfig, motion } from "motion/react";
 import { useLenis } from "@/hooks/use-lenis";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/sections/Footer";
 import { products as fallback, mapShopifyProduct, type Product } from "@/lib/products";
 import { fetchProducts } from "@/lib/shopify-fns";
 
-// Back covers imported directly as assets (NOT via three/Notebook — that
-// would pull three.js into this route's bundle). Hovering a card flips the
-// notebook over.
-import backPink from "@/assets/covers/cover_pink_back.webp";
-import backBlue from "@/assets/covers/cover_blue_back.webp";
-import backGreen from "@/assets/covers/cover_green_back.webp";
-
-const BACK_COVERS: Record<string, string> = {
-  "blush-pink": backPink,
-  "ocean-blue": backBlue,
-  "sage-green": backGreen,
-};
+const ease = [0.16, 1, 0.3, 1] as const;
 
 export const Route = createFileRoute("/shop/")({
   loader: async () => {
@@ -60,42 +50,34 @@ export const Route = createFileRoute("/shop/")({
 
 /**
  * Editorial product card — matches the Still Life direction.
- * The photo sits on a clean white surface (no tinted panel, no label bar);
- * the caption below is a hairline-ruled editorial entry: № index, display
- * name, script mood line, price. Hover flips the notebook to its back cover
- * (a real asset this page never used) and slides the underline CTA arrow.
+ * A clean framed image slot (fixed 3:4, object-cover so any future photo
+ * fills it with no distortion and no code change), then a hairline-ruled
+ * caption: № index, display name, script mood line, price. Hovering lifts the
+ * card and gently zooms the image inside its frame.
  */
 function ProductCard({ product: p, index }: { product: Product; index: number }) {
-  const back = BACK_COVERS[p.handle] ?? p.shopifyImages[1]?.url;
   return (
     <Link to="/shop/$handle" params={{ handle: p.handle }} className="group block">
-      {/* Clean white stage */}
-      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-white shadow-card transition-shadow duration-500 ease-soft group-hover:shadow-lift">
-        {/* № index — quiet editorial marker */}
-        <span className="absolute left-5 top-5 z-10 text-[11px] uppercase tracking-[0.3em] text-blue/35">
-          № {String(index + 1).padStart(2, "0")}
-        </span>
+      {/* Framed image slot — fixed aspect, overflow-hidden so the hover zoom
+          stays inside the frame. bg + hairline ring read as a mat even before
+          a photo loads or if a future photo has transparency. The whole card
+          lifts on hover (translate on this wrapper). */}
+      <div className="transition-transform duration-500 ease-soft group-hover:-translate-y-1.5 motion-reduce:transform-none">
+        <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[color-mix(in_oklab,var(--blush)_28%,white)] shadow-card ring-1 ring-blue/8 transition-shadow duration-500 ease-soft group-hover:shadow-lift">
+          {/* № index — quiet editorial marker */}
+          <span className="absolute left-5 top-5 z-10 text-[11px] uppercase tracking-[0.3em] text-blue/35">
+            № {String(index + 1).padStart(2, "0")}
+          </span>
 
-        {/* Front cover — fades out on hover when a back exists (both photos
-            have transparent backgrounds, so they must not overlap) */}
-        <img
-          src={p.image}
-          alt={`${p.title} notebook`}
-          draggable={false}
-          className={`absolute inset-0 m-auto h-[78%] w-auto max-w-[80%] object-contain transition-all duration-700 ease-soft group-hover:scale-[1.02] ${back ? "group-hover:opacity-0" : ""}`}
-          style={{ filter: "drop-shadow(0 20px 28px rgba(11,95,165,0.14))" }}
-        />
-        {/* Back cover — revealed on hover (the flip) */}
-        {back && (
+          {/* The product photo — fills the frame, gently zooms on hover.
+              Slow 900ms ease-soft = considered, not bouncy. */}
           <img
-            src={back}
-            alt=""
-            aria-hidden
+            src={p.image}
+            alt={`${p.title} notebook`}
             draggable={false}
-            className="absolute inset-0 m-auto h-[78%] w-auto max-w-[80%] object-contain opacity-0 transition-all duration-700 ease-soft group-hover:scale-[1.02] group-hover:opacity-100"
-            style={{ filter: "drop-shadow(0 20px 28px rgba(11,95,165,0.14))" }}
+            className="h-full w-full object-cover transition-transform duration-[900ms] ease-soft group-hover:scale-[1.05] motion-reduce:transform-none motion-reduce:transition-none"
           />
-        )}
+        </div>
       </div>
 
       {/* Editorial caption — hairline rule, like the Showcase spec list */}
@@ -143,14 +125,26 @@ function ShopPage() {
         </header>
 
         {/* Staggered gallery rhythm — cards step down across the row like a
-            hung salon wall, instead of three identical boxes on a rail */}
-        <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-20">
-          {displayProducts.map((p, i) => (
-            <div key={p.handle} className={i % 3 === 1 ? "lg:mt-16" : i % 3 === 2 ? "lg:mt-32" : ""}>
-              <ProductCard product={p} index={i} />
-            </div>
-          ))}
-        </div>
+            hung salon wall, instead of three identical boxes on a rail.
+            Each card fades and rises in as it enters, staggered across the row
+            (reset per row via i % 3). reducedMotion="user" drops the rise for
+            users who ask for less motion — they still get a gentle fade. */}
+        <MotionConfig reducedMotion="user">
+          <div className="grid grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-20">
+            {displayProducts.map((p, i) => (
+              <motion.div
+                key={p.handle}
+                initial={{ opacity: 0, y: 28 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ duration: 0.7, ease, delay: (i % 3) * 0.1 }}
+                className={i % 3 === 1 ? "lg:mt-16" : i % 3 === 2 ? "lg:mt-32" : ""}
+              >
+                <ProductCard product={p} index={i} />
+              </motion.div>
+            ))}
+          </div>
+        </MotionConfig>
       </div>
       <Footer />
     </main>

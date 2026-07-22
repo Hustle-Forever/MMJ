@@ -301,8 +301,12 @@ Design pass on the homepage only (no checkout/Shopify/Stripe changes).
 - Killed the per-product tinted panel and the colored label bar (it duplicated the title).
 - Product photos now sit on a clean white surface with a quiet `№ 01` index marker.
 - Editorial caption under a hairline rule: display name, tabular price, the per-colourway script mood line, and an underline "Shop →" (the filled pill stays hero-only).
-- Hover flips the notebook to its **back cover** (bundled `cover_*_back.webp`, imported directly — not via `three/Notebook`, which would pull three.js into the route bundle). Unknown Shopify products fall back to their second CDN image, or a plain scale if none.
 - Cards step down across the row (`lg:mt-16` / `lg:mt-32` by column) — a salon-wall rhythm instead of three identical boxes.
+
+**Shop card refinement (2026-07-22)**:
+- The image now fills a **framed slot** — fixed 3:4 aspect, `object-cover`, `overflow-hidden`. Any future photo drops in and fills cleanly with no distortion and no code change (replaced the earlier floating `object-contain` cover + back-cover flip, which coupled to having a back asset).
+- Hover: the whole card lifts (`-translate-y-1.5`) and the image gently zooms **inside** the frame (`scale-1.05` over 900ms ease-soft) — considered, not bouncy.
+- Staggered fade-in on scroll-in via Motion (`whileInView`, `once`), offset by `(i % 3) * 0.1s` across each row. Wrapped in `MotionConfig reducedMotion="user"` so reduced-motion users get a fade with no movement; the hover transforms carry `motion-reduce:transform-none`.
 
 ---
 
