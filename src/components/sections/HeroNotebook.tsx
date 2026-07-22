@@ -125,19 +125,27 @@ export function HeroNotebook({ color = "pink" }: { color?: NotebookColor }) {
           width: "min(72vw, clamp(200px, min(46vw, 40vh), 430px))",
         }}
       >
-        {/* Always-present flat book — hidden only once the 3D book is confirmed. */}
+        {/* Always-present flat book. It cross-dissolves with the 3D book:
+            both animate opacity over the same soft curve so neither snaps —
+            the flat fades out as the live book fades in. Any 3D failure
+            (onFail → ready=false) fades the flat back to full. */}
         <div
-          className="absolute inset-0 flex items-center justify-center transition-opacity duration-500"
+          className="absolute inset-0 flex items-center justify-center transition-opacity duration-700 ease-soft"
           style={{ opacity: ready ? 0 : 1 }}
         >
           <FlatCover />
         </div>
 
-        {/* Live 3D overlay. Any failure leaves the flat book above. */}
+        {/* Live 3D overlay — fades IN as it becomes ready (the other half of
+            the crossfade). Without this the canvas would paint on top at full
+            opacity the instant its texture loads, snapping the book in. */}
         {use3D && (
           <CanvasErrorBoundary onFail={() => setReady(false)}>
             <Suspense fallback={null}>
-              <div className="absolute inset-0">
+              <div
+                className="absolute inset-0 transition-opacity duration-700 ease-soft"
+                style={{ opacity: ready ? 1 : 0 }}
+              >
                 <Scene color={color} lowPower={lowPower} onReady={() => setReady(true)} />
               </div>
             </Suspense>
