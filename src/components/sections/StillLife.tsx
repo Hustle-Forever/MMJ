@@ -1,14 +1,10 @@
-import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { useRef } from "react";
 import { motion, useInView, type Variants } from "motion/react";
 import { Link } from "@tanstack/react-router";
 
-import { hasWebGL } from "@/lib/detect-3d";
 import coverPink from "@/assets/covers/cover_pink_front.webp";
 import coverBlue from "@/assets/covers/cover_blue_front.webp";
 import coverGreen from "@/assets/covers/cover_green_front.webp";
-
-// Lazy so three/R3F never ship in the initial bundle.
-const StillLifeScene = lazy(() => import("@/components/three/StillLifeScene"));
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -30,75 +26,57 @@ const fadeUp: Variants = {
   }),
 };
 
-class CanvasErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
+const bookIn: Variants = {
+  hidden: { opacity: 0, y: 36 },
+  visible: (delay: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 1.1, ease, delay },
+  }),
+};
+
+/* Two-layer shadow: a tight contact core plus a wide ambient falloff, so the
+   photos read as objects sitting on the set rather than stickers. */
+const SHADOW =
+  "drop-shadow(0 10px 12px rgba(0,0,0,0.45)) drop-shadow(0 34px 44px rgba(0,0,0,0.38))";
 
 /**
- * Flat still life — the guaranteed-visible base and the entire mobile
- * experience: three covers overlapped like a dealt hand on the dark set.
- * Reads at 390px without any 3D.
- */
-function FlatStillLife() {
-  const drop = "drop-shadow(0 30px 34px rgba(0,0,0,0.45))";
-  return (
-    <div className="relative mx-auto h-full w-full max-w-[720px]">
-      {/* Ocean — behind, leaning right */}
-      <img
-        src={coverBlue}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className="absolute bottom-[16%] left-1/2 w-[38%] -translate-x-[8%] rotate-[11deg]"
-        style={{ filter: drop }}
-      />
-      {/* Sage — base of the stack */}
-      <img
-        src={coverGreen}
-        alt=""
-        aria-hidden
-        draggable={false}
-        className="absolute bottom-[8%] left-1/2 w-[42%] -translate-x-[78%] rotate-[-9deg]"
-        style={{ filter: drop }}
-      />
-      {/* Blush — on top, front and center */}
-      <img
-        src={coverPink}
-        alt="The three Curated by MMJ notebooks together"
-        draggable={false}
-        className="absolute bottom-[10%] left-1/2 w-[44%] -translate-x-[46%] rotate-[3deg]"
-        style={{ filter: drop }}
-      />
-    </div>
-  );
-}
-
-/**
- * The Still Life — the page's single dark chapter. Three notebooks lit like a
- * luxury product photograph on a deep shade of the brand blue. Desktop gets
- * the live 3D set (raking light, linen grain, hover tilt); mobile gets a
- * static composition that still reads at 390px.
+ * The Still Life — the page's single dark chapter. Built entirely from the
+ * real product photographs (no 3D): three notebooks overlapping on the navy
+ * set like a dealt hand, slight rotations, layered drop shadows, a soft
+ * floor glow to ground them. On fine pointers each book lifts and
+ * straightens a touch on hover.
  */
 export function StillLife() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.2 });
-  const [use3D, setUse3D] = useState(false);
-  const [ready, setReady] = useState(false);
 
-  useEffect(() => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const desktop = window.matchMedia("(min-width: 768px)");
-    const force = new URLSearchParams(window.location.search).get("force3d");
-    if (force === "0" || reduce.matches) return;
-    // Desktop only — mobile always gets the static composition (frame budget).
-    if (force === "1" || desktop.matches) setUse3D(hasWebGL());
-  }, []);
+  // Position (outer, animated by motion) is separate from the rotate/offset
+  // transform (inner) — motion writes style.transform on its element, which
+  // would otherwise clobber the Tailwind rotation classes.
+  const books = [
+    {
+      src: coverGreen,
+      alt: "",
+      delay: 0.15,
+      pos: "bottom-[6%] left-1/2 z-0 w-[38%] max-w-[300px]",
+      tilt: "-translate-x-[88%] rotate-[-10deg] hover:-translate-y-2 hover:rotate-[-8deg]",
+    },
+    {
+      src: coverBlue,
+      alt: "",
+      delay: 0.3,
+      pos: "bottom-[9%] left-1/2 z-0 w-[36%] max-w-[285px]",
+      tilt: "translate-x-[2%] rotate-[11deg] hover:-translate-y-2 hover:rotate-[9deg]",
+    },
+    {
+      src: coverPink,
+      alt: "The three Curated by MMJ notebooks — blush pink, ocean blue and sage green",
+      delay: 0.45,
+      pos: "bottom-[7%] left-1/2 z-10 w-[40%] max-w-[315px]",
+      tilt: "-translate-x-[47%] rotate-[2.5deg] hover:-translate-y-2 hover:rotate-[1deg]",
+    },
+  ];
 
   return (
     <section
@@ -146,23 +124,38 @@ export function StillLife() {
           </motion.p>
         </div>
 
-        {/* The set — flat base always present; 3D overlays once confirmed */}
-        <div className="relative mt-6 h-[min(58vw,420px)] w-full md:mt-2 md:h-[560px]">
+        {/* The set — real photographs only */}
+        <div className="relative mx-auto mt-6 h-[min(62vw,440px)] w-full max-w-[820px] md:mt-2 md:h-[540px]">
+          {/* Floor glow — soft pool of light grounding the composition */}
           <div
-            className="absolute inset-0 transition-opacity duration-700"
-            style={{ opacity: ready ? 0 : 1 }}
-          >
-            <FlatStillLife />
-          </div>
-          {use3D && (
-            <CanvasErrorBoundary>
-              <Suspense fallback={null}>
-                <div className="absolute inset-0">
-                  <StillLifeScene onReady={() => setReady(true)} />
-                </div>
-              </Suspense>
-            </CanvasErrorBoundary>
-          )}
+            aria-hidden
+            className="absolute bottom-0 left-1/2 h-[26%] w-[86%] -translate-x-1/2"
+            style={{
+              background:
+                "radial-gradient(50% 100% at 50% 100%, rgba(255,242,226,0.10) 0%, transparent 70%)",
+            }}
+          />
+          {books.map((b) => (
+            <motion.div
+              key={b.src}
+              custom={b.delay}
+              variants={bookIn}
+              initial="hidden"
+              animate={inView ? "visible" : "hidden"}
+              className={`absolute ${b.pos}`}
+            >
+              <div className={`${b.tilt} transition-transform duration-500 ease-soft`}>
+                <img
+                  src={b.src}
+                  alt={b.alt}
+                  aria-hidden={b.alt === "" || undefined}
+                  draggable={false}
+                  className="w-full"
+                  style={{ filter: SHADOW }}
+                />
+              </div>
+            </motion.div>
+          ))}
         </div>
 
         {/* Secondary action — underline treatment, not another filled pill */}
@@ -171,7 +164,7 @@ export function StillLife() {
           variants={fadeUp}
           initial="hidden"
           animate={inView ? "visible" : "hidden"}
-          className="mt-10 flex justify-center md:mt-6"
+          className="mt-10 flex justify-center md:mt-8"
         >
           <Link
             to="/shop"

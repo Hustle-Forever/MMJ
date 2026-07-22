@@ -259,12 +259,10 @@ curl -X POST https://yourstore.myshopify.com/api/2024-10/graphql.json \
 
 Design pass on the homepage only (no checkout/Shopify/Stripe changes).
 
-**New: The Still Life section** (`src/components/sections/StillLife.tsx` + `src/components/three/StillLifeScene.tsx`)
+**The Still Life section** (`src/components/sections/StillLife.tsx`)
 - The page's single dark chapter — `--navy` (#092c49), a deep shade of the locked brand blue, between Showcase and Editorial.
-- Three notebooks composed like a luxury product photograph: blush + sage lying stacked, ocean leaning behind, satin ribbons pooling on the set floor.
-- Material realism: procedural env map (drei Lightformers — no network HDR), linen-weave bump map (procedural canvas), roughness 0.65, warm raking strip light producing a readable specular along the covers, baked `ContactShadows` (frames=1).
-- `frameloop="demand"` — the idle scene renders zero frames; hover tilt (desktop only) invalidates frames only while settling.
-- Mobile (and no-WebGL/reduced-motion) gets a static fanned-covers composition — no canvas, no cost. Desktop ≥768px with WebGL gets the live set.
+- Built entirely from the **real product photographs** (no 3D): three notebooks fanned and overlapping on the navy set, slight rotations, layered drop shadows (tight contact core + wide ambient falloff), a soft floor glow grounding them. On fine pointers each book lifts and straightens a touch on hover.
+- **Why not 3D**: the earlier R3F set (`StillLifeScene.tsx`, since deleted) rendered the books as flat boxes — the real product is a white page block wrapped in a fabric cover that overhangs the block, which the procedural geometry couldn't convey. Flat photos of the actual product read as the product; the box render did not. No three.js loads on this section at all now.
 
 **Fixes from the design audit**
 - Section surface contrast: Showcase now sits on white, Still Life on navy, Testimonials on blush-2 — the page reads as chapters instead of wall-to-wall blush.
@@ -273,7 +271,6 @@ Design pass on the homepage only (no checkout/Shopify/Stripe changes).
 - Button hierarchy: the filled pill is now reserved for the hero's single primary CTA; Showcase and Still Life actions use an underline treatment.
 - Copy: "Make it happen." now appears only in the hero. Film header became "The first page is yours."; the marquee slot became "Made to be returned to".
 
-**3D API change**: `NotebookBody` accepts `showRibbon?: boolean` (default `true`) — the still life hides the hanging tail (it would float sideways on lying books) and uses pooled floor ribbons instead.
 
 **Hero pop-in fix (2026-07-20)**: the flat fallback cover rendered at 100% of the stage height while the 3D book fills only ~80.5% (`NB.H / (2·(6−D/2)·tan(fov/2))` at camera z=6, fov=34), so the crossfade visibly snapped the book smaller on first load. The flat cover now renders at 80.5% so the first painted frame matches the 3D book's final size.
 
