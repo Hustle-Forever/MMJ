@@ -269,8 +269,12 @@ photos in `raw/` (gitignored) via `scripts/process-covers.ps1` (crop to the
   chambray blue (hue 212°) while leaving the neutral white stripes and cream
   script untouched (hue rotation doesn't affect near-neutral pixels).
 
-**Known-wrong artwork (needs re-export by the client, not fixable in code):**
-see the artwork audit note at the end of this section.
+**Scroll-driven Showcase text colour**: as the colourway showcase scrubs, the
+heading and CTA ink morphs through rose → brand blue → sage to match the
+active cover, interpolated per-frame off the existing ScrollTrigger progress
+(`--morph` CSS var). All three inks and every midpoint clear WCAG AA on the
+white surface (≥5.9:1). `prefers-reduced-motion` snaps to the active
+colourway's solid ink instead of animating continuously.
 
 ---
 

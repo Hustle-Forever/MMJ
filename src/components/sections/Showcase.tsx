@@ -15,15 +15,16 @@ import { detect3DTier, hasWebGL } from "@/lib/detect-3d";
 const ShowcaseScene = lazy(() => import("@/components/three/ShowcaseScene"));
 const MOBILE_TIER_MIN = 2;
 
-// Readable morph colors echoing each product (rose / brand-blue / sage). The
-// big side heading + CTA morph through these as the cover crossfades; body copy
-// stays brand blue for readability.
-// Locked palette only — blue #0B5FA5 is the only readable heading/CTA color.
-// The visual variety between sections comes from the cover crossfade.
+// Per-colourway heading/CTA ink — the section text morphs through these as the
+// cover crossfades (rose for blush pink, brand blue for ocean, sage for green).
+// Order matches the cover order pink→blue→green→pink (see coverOpacities).
+// All three, and every interpolation midpoint between them, clear WCAG AA on
+// the white surface (measured ≥5.9:1) — verified so the small CTA text stays
+// readable at every scroll position. Body copy stays brand blue.
 const MORPH: [number, number, number][] = [
-  [11, 95, 165], // blue #0B5FA5
-  [11, 95, 165], // blue #0B5FA5
-  [11, 95, 165], // blue #0B5FA5
+  [158, 61, 94], // rose  #9E3D5E — blush pink colourway
+  [11, 95, 165], // blue  #0B5FA5 — ocean blue colourway
+  [85, 107, 52], // sage  #556B34 — sage green colourway
 ];
 function morphColor(p: number) {
   const seg = Math.min(2, Math.floor(p * 3));
@@ -99,14 +100,19 @@ export function Showcase() {
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
+    // Respect reduced-motion: snap the text ink to the active colourway's solid
+    // colour (a discrete change per slug, eased by the existing mask-up remount)
+    // instead of a continuous scroll-driven colour animation.
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const apply = (p: number) => {
       progress.current = p;
-      copyRef.current?.style.setProperty("--morph", morphColor(p));
       const o = coverOpacities(p);
       imgRefs.current.forEach((im, i) => {
         if (im) im.style.opacity = String(o[i]);
       });
       const idx = p < 0.28 ? 0 : p < 0.55 ? 1 : p < 0.86 ? 2 : 0;
+      const ink = reduce ? `rgb(${MORPH[idx][0]} ${MORPH[idx][1]} ${MORPH[idx][2]})` : morphColor(p);
+      copyRef.current?.style.setProperty("--morph", ink);
       setActiveIndex((cur) => (cur === idx ? cur : idx));
     };
     const st = ScrollTrigger.create({
