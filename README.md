@@ -255,6 +255,25 @@ curl -X POST https://yourstore.myshopify.com/api/2024-10/graphql.json \
 
 ---
 
+## Cover Asset Corrections (2026-07-22)
+
+The cover textures in `src/assets/covers/` are generated from raw product
+photos in `raw/` (gitignored) via `scripts/process-covers.ps1` (crop to the
+2.1:2.9 face aspect → 1014×1400) then `scripts/covers-to-webp.mjs`.
+
+- **Green** — a new photo had been converted to webp uncropped (4253×3675
+  landscape) while pink/blue are 1014×1400 face crops, so green rendered tiny
+  with baked-in padding. Re-ran the pipeline to produce a proper face crop.
+- **Blue** — the fabric read periwinkle/violet (sampled stripe hue 221°). A
+  `sharp` hue rotation of −12° with saturation ×1.12 shifts it to a true
+  chambray blue (hue 212°) while leaving the neutral white stripes and cream
+  script untouched (hue rotation doesn't affect near-neutral pixels).
+
+**Known-wrong artwork (needs re-export by the client, not fixable in code):**
+see the artwork audit note at the end of this section.
+
+---
+
 ## Homepage Redesign — The Still Life (2026-07-20)
 
 Design pass on the homepage only (no checkout/Shopify/Stripe changes).
